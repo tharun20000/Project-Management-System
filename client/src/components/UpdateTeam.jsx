@@ -483,7 +483,7 @@ const UpdateTeam = ({ openUpdate, setOpenUpdate }) => {
                 setBackDisabled(false);
                 dispatch(
                     openSnackbar({
-                        message: err.message,
+                        message: err.response?.data?.message || err.message,
                         type: "error",
                     })
                 );
@@ -528,7 +528,7 @@ const UpdateTeam = ({ openUpdate, setOpenUpdate }) => {
                 setBackDisabled(false);
                 dispatch(
                     openSnackbar({
-                        message: err.message,
+                        message: err.response?.data?.message || err.message,
                         type: "error",
                     })
                 );
@@ -560,7 +560,7 @@ const UpdateTeam = ({ openUpdate, setOpenUpdate }) => {
                 setBackDisabled(false);
                 dispatch(
                     openSnackbar({
-                        message: err.message,
+                        message: err.response?.data?.message || err.message,
                         type: "error",
                     })
                 );
@@ -653,14 +653,14 @@ const UpdateTeam = ({ openUpdate, setOpenUpdate }) => {
 
                             <ButtonContainer>
                                 {openUpdate.type === "all" && (
-                                <OutlinedBox
-                                    button={true}
-                                    activeButton={false}
-                                    style={{ marginTop: "18px", width: "100%" }}
-                                    onClick={() => { !backDisabled && goToAddTeam() }}
-                                >
-                                    Back
-                                </OutlinedBox>
+                                    <OutlinedBox
+                                        button={true}
+                                        activeButton={false}
+                                        style={{ marginTop: "18px", width: "100%" }}
+                                        onClick={() => { !backDisabled && goToAddTeam() }}
+                                    >
+                                        Back
+                                    </OutlinedBox>
                                 )}
                                 <OutlinedBox
                                     button={true}
@@ -768,28 +768,28 @@ const UpdateTeam = ({ openUpdate, setOpenUpdate }) => {
                                 </UsersList>
                             </AddMember>
                             {openUpdate.type === "all" && (
-                            <ButtonContainer>
-                                <OutlinedBox
-                                    button={true}
-                                    activeButton={false}
-                                    style={{ marginTop: "18px", width: "100%" }}
-                                    onClick={() => { !backDisabled && goToAddTools() }}
-                                >
-                                    Back
-                                </OutlinedBox>
-                                <OutlinedBox
-                                    button={true}
-                                    activeButton={!disabled}
-                                    style={{ marginTop: "18px", width: "100%" }}
-                                    onClick={() => { !disabled && updateTeamData() }}
-                                >
-                                    {Loading ? (
-                                        <CircularProgress color="inherit" size={20} />
-                                    ) : (
-                                        "Update Team"
-                                    )}
-                                </OutlinedBox>
-                            </ButtonContainer>
+                                <ButtonContainer>
+                                    <OutlinedBox
+                                        button={true}
+                                        activeButton={false}
+                                        style={{ marginTop: "18px", width: "100%" }}
+                                        onClick={() => { !backDisabled && goToAddTools() }}
+                                    >
+                                        Back
+                                    </OutlinedBox>
+                                    <OutlinedBox
+                                        button={true}
+                                        activeButton={!disabled}
+                                        style={{ marginTop: "18px", width: "100%" }}
+                                        onClick={() => { !disabled && updateTeamData() }}
+                                    >
+                                        {Loading ? (
+                                            <CircularProgress color="inherit" size={20} />
+                                        ) : (
+                                            "Update Team"
+                                        )}
+                                    </OutlinedBox>
+                                </ButtonContainer>
                             )}
                         </>
                     )}

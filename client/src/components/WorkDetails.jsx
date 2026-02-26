@@ -4,11 +4,14 @@ import CircularProgress from "@mui/material/CircularProgress";
 import styled from "styled-components";
 import {
   CloseRounded,
+  Add
 } from "@mui/icons-material";
 import { Avatar } from "@mui/material";
 import { useDispatch } from "react-redux";
 import { tagColors } from "../data/data";
 import TaskCard from "./TaskCard";
+import { addTask } from "../api/index";
+import { openSnackbar } from "../redux/snackbarSlice";
 
 const Container = styled.div`
   width: 100%;
@@ -194,36 +197,99 @@ const Date = styled.div`
   `}
 `;
 
+const NewTaskWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px dashed ${({ theme }) => theme.soft2};
+  border-radius: 8px;
+  margin-top: 10px;
+  width: 100%;
+`;
 
-const WorkDetails = ({ setOpenWork, work }) => {
+const Input = styled.input`
+  border: 1px solid ${({ theme }) => theme.soft2};
+  background-color: transparent;
+  color: ${({ theme }) => theme.text};
+  border-radius: 4px;
+  padding: 6px;
+  font-size: 12px;
+  width: ${({ width }) => width || "auto"};
+  outline: none;
+`;
+
+const Button = styled.button`
+  padding: 6px 12px;
+  background-color: ${({ theme, cancel }) => cancel ? theme.soft : theme.primary};
+  color: ${({ theme, cancel }) => cancel ? theme.textSoft : "white"};
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+
+  &:hover {
+    opacity: 0.9;
+  }
+`;
+
+const AddTaskButton = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  margin-top: 10px;
+  cursor: pointer;
+  color: ${({ theme }) => theme.primary};
+  font-weight: 500;
+  border-radius: 8px;
+  &:hover {
+    background-color: ${({ theme }) => theme.primary + "10"};
+  }
+`;
+
+const WorkDetails = ({ setOpenWork, work, reloadWorks }) => {
   const dispatch = useDispatch();
-  const [task, setTask] = useState(work.tasks);
-  const [tag, setTag] = useState(work.tags);
+  const token = localStorage.getItem("token");
+  const [task, setTask] = useState(work.tasks || []);
   const [completed, setCompleted] = useState(0);
   const [progress, setProgress] = useState(0);
   const [members, setMembers] = useState([]);
 
+  const [showAdd, setShowAdd] = useState(false);
+  const [newTask, setNewTask] = useState({ task: "", desc: "", start_date: "", end_date: "" });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setTask(work.tasks || []);
+  }, [work]);
+
   useEffect(() => {
     let count = 0;
     let Members = [];
-    task.forEach((item) => {
-      if (item.status === "Completed") {
-        count++;
-      }
+    if (Array.isArray(task)) {
+      task.forEach((item) => {
+        if (item.status === "Completed") {
+          count++;
+        }
 
-      if (item.members.length > 0) {
-        item.members.forEach((items) => {
-          //check if the same member is already present in the array
-          let isPresent = Members.some((member) => member._id === items._id);
-          if (!isPresent) {
-            Members.push(items);
-          }
-
-        });
-      }
-    });
+        if (item.members && item.members.length > 0) {
+          item.members.forEach((items) => {
+            if (items) {
+              //check if the same member is already present in the array
+              let isPresent = Members.some((member) => member._id === items._id);
+              if (!isPresent) {
+                Members.push(items);
+              }
+            }
+          });
+        }
+      });
+    }
     setCompleted(count);
-    setProgress((count / task.length) * 100);
+    setProgress(task.length > 0 ? (count / task.length) * 100 : 0);
     setMembers(Members);
   }, [task]);
 
@@ -231,6 +297,32 @@ const WorkDetails = ({ setOpenWork, work }) => {
     setTask((prev) =>
       prev.map((t) => (t._id === taskId ? { ...t, status: newStatus } : t))
     );
+    if (reloadWorks) reloadWorks();
+  };
+
+  const deleteTaskLocal = (taskId) => {
+    setTask((prev) => prev.filter((t) => t._id !== taskId));
+    if (reloadWorks) reloadWorks();
+  };
+
+  const handleAddTask = async () => {
+    if (!newTask.task || !newTask.start_date || !newTask.end_date) {
+      dispatch(openSnackbar({ message: "Please fill all fields", severity: "error" }));
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await addTask(work._id, { ...newTask, members: [] }, token);
+      setTask([...task, res.data]);
+      setShowAdd(false);
+      setNewTask({ task: "", desc: "", start_date: "", end_date: "" });
+      dispatch(openSnackbar({ message: "Task added successfully", severity: "success" }));
+      if (reloadWorks) reloadWorks();
+    } catch (err) {
+      dispatch(openSnackbar({ message: err.response?.data?.message || "Error adding task", severity: "error" }));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -253,17 +345,6 @@ const WorkDetails = ({ setOpenWork, work }) => {
             <Desc>
               {work.desc}
             </Desc>
-            <Tags>
-              {work.tags.map((tag) => (
-                <Tag
-                  tagColor={
-                    tagColors[Math.floor(Math.random() * tagColors.length)]
-                  }
-                >
-                  {tag}
-                </Tag>
-              ))}
-            </Tags>
             <Members
               style={{
                 margin: "10px 0px",
@@ -304,7 +385,7 @@ const WorkDetails = ({ setOpenWork, work }) => {
                 <Task
                   style={{ width: "51%", fontSize: "14px", fontWeight: "800" }}
                 >
-                  Tasks
+                  Sub-tasks
                 </Task>
                 <Date style={{ fontSize: "14px", fontWeight: "800" }}>
                   Start Date
@@ -314,6 +395,9 @@ const WorkDetails = ({ setOpenWork, work }) => {
                 </Date>
                 <Date style={{ fontSize: "14px", fontWeight: "800" }}>
                   Status
+                </Date>
+                <Date style={{ fontSize: "14px", fontWeight: "800", width: "12%" }}>
+                  Time
                 </Date>
                 <Date
                   style={{
@@ -326,9 +410,55 @@ const WorkDetails = ({ setOpenWork, work }) => {
                   Members
                 </Date>
               </TableHeader>
-              {task.map((item, index) => (
-                <TaskCard key={item._id} item={item} index={index} members={members} updateTaskLocal={updateTaskLocal} />
+              {task?.map((item, index) => (
+                <TaskCard key={item._id} item={item} index={index} members={members} updateTaskLocal={updateTaskLocal} deleteTaskLocal={deleteTaskLocal} />
               ))}
+
+              {!showAdd ? (
+                <AddTaskButton onClick={() => setShowAdd(true)}>
+                  <Add fontSize="small" /> Add Sub-task
+                </AddTaskButton>
+              ) : (
+                <NewTaskWrapper>
+                  <Input
+                    width="5%"
+                    disabled
+                    value={task.length + 1}
+                  />
+                  <div style={{ display: 'flex', flexDirection: 'column', width: '45%' }}>
+                    <Input
+                      width="100%"
+                      placeholder="Sub-task Title"
+                      value={newTask.task}
+                      onChange={(e) => setNewTask({ ...newTask, task: e.target.value })}
+                      style={{ marginBottom: '4px' }}
+                    />
+                    <Input
+                      width="100%"
+                      placeholder="Sub-task Description (Used for AI Impact Analysis)"
+                      value={newTask.desc}
+                      onChange={(e) => setNewTask({ ...newTask, desc: e.target.value })}
+                    />
+                  </div>
+                  <Input
+                    width="15%"
+                    type="date"
+                    value={newTask.start_date}
+                    onChange={(e) => setNewTask({ ...newTask, start_date: e.target.value })}
+                  />
+                  <Input
+                    width="15%"
+                    type="date"
+                    value={newTask.end_date}
+                    onChange={(e) => setNewTask({ ...newTask, end_date: e.target.value })}
+                  />
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    <Button onClick={handleAddTask} disabled={loading}>{loading ? "..." : "Add"}</Button>
+                    <Button cancel onClick={() => setShowAdd(false)}>Cancel</Button>
+                  </div>
+                </NewTaskWrapper>
+              )}
+
             </Table>
           </Bottom>
         </Wrapper>

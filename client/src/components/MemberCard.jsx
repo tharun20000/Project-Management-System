@@ -19,22 +19,33 @@ const Wrapper = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
+  flex: 1;
+  min-width: 0; /* Important for flex child truncation */
 `;
 
 const Details = styled.div`
-  gap: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
 `;
 
 const Name = styled.div`
   font-size: 13px;
   font-weight: 500;
   color: ${({ theme }) => theme.textSoft};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 const EmailId = styled.div`
   font-size: 10px;
   font-weight: 400;
   color: ${({ theme }) => theme.textSoft + "99"};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 const Role = styled.div`
@@ -44,6 +55,7 @@ const Role = styled.div`
   border-radius: 12px;
   color: ${({ tagColor, theme }) => tagColor + theme.lightAdd};
   background-color: ${({ tagColor, theme }) => tagColor + "10"};
+  white-space: nowrap;
 `;
 
 const Access = styled.div`
@@ -53,24 +65,37 @@ const Access = styled.div`
   padding: 4px 8px;
   border-radius: 12px;
   background-color: ${({ theme }) => theme.soft2 + "33"};
+  white-space: nowrap;
 `;
+
+const RightSection = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: 8px;
+`;
+
+
 
 const MemberCard = ({ member }) => {
   return (
     <Container>
       <Wrapper>
-        <UserAvatar sx={{ width: '34px', height: '34px' }} user={member.id} />
+        <UserAvatar sx={{ width: '38px', height: '38px' }} user={member.id} />
         <Details>
           <Name>{member.id.name}</Name>
           <EmailId>{member.id.email}</EmailId>
         </Details>
+      </Wrapper>
+      <RightSection>
         <Role
           tagColor={tagColors[Math.floor(Math.random() * tagColors.length)]}
         >
           {member.role}
         </Role>
-      </Wrapper>
-      <Access>{member.access}</Access>
+        <Access>{member.access}</Access>
+      </RightSection>
     </Container>
   );
 };

@@ -12,6 +12,8 @@ import {
   TroubleshootRounded,
   SendRounded,
   SearchOutlined,
+  RocketLaunch,
+  AutoFixHigh
 } from "@mui/icons-material";
 import { tools } from "../data/data";
 import { Avatar } from "@mui/material";
@@ -22,7 +24,8 @@ import {
   searchUsers,
   createProject,
   addTeamProject,
-  getUsers
+  getUsers,
+  warpDriveProject
 } from "../api/index";
 import { openSnackbar } from "../redux/snackbarSlice";
 import { useDispatch } from "react-redux";
@@ -38,11 +41,14 @@ const Container = styled.div`
   background-color: #000000a7;
   display: flex;
   justify-content: center;
+  overflow-y: auto;
 `;
 
 const Wrapper = styled.div`
   width: 100%;
   height: min-content;
+  max-height: 96%;
+  overflow-y: auto;
   margin: 2%;
   max-width: 600px;
   border-radius: 16px;
@@ -68,8 +74,11 @@ const Desc = styled.textarea`
   border-radius: 3px;
   background-color: transparent;
   outline: none;
-  padding: 10px 0px;
-  color: ${({ theme }) => theme.textSoft};
+  padding: 0;
+  margin: 0;
+  color: ${({ theme }) => theme.text};
+  resize: none;
+  font-family: inherit;
 `;
 
 const Label = styled.div`
@@ -129,7 +138,8 @@ const TextInput = styled.input`
   border-radius: 3px;
   background-color: transparent;
   outline: none;
-  color: ${({ theme }) => theme.textSoft};
+  color: ${({ theme }) => theme.text};
+  font-family: inherit;
 `;
 
 const ToolsContainer = styled.div`
@@ -277,6 +287,101 @@ const InviteButton = styled.button`
   }
 `;
 
+const ProjectName = styled.div`
+  font-size: 14px;
+`;
+
+const WarpContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 10px 20px;
+`;
+
+const WarpPromptArea = styled.textarea`
+  width: 100%;
+  min-height: 150px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid ${({ theme }) => theme.soft + "50"};
+  border-radius: 12px;
+  padding: 16px;
+  color: ${({ theme }) => theme.text};
+  font-size: 14px;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  &:focus {
+    border-color: ${({ theme }) => theme.primary};
+  }
+`;
+
+const MatrixOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #000;
+  z-index: 1000;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+`;
+
+const MatrixText = styled.div`
+  font-family: 'Courier New', Courier, monospace;
+  color: #00ff41;
+  font-size: 14px;
+  text-shadow: 0 0 5px #00ff41;
+  margin-top: 5px;
+  text-align: center;
+`;
+
+const GlowButton = styled.div`
+  padding: 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  color: white;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  &:hover {
+    box-shadow: 0 0 30px rgba(168, 85, 247, 0.6);
+    transform: scale(1.02);
+  }
+`;
+
+const ModeToggle = styled.div`
+  display: flex;
+  background: ${({ theme }) => theme.bg};
+  padding: 4px;
+  border-radius: 10px;
+  margin: 0 20px 10px;
+`;
+
+const ModeButton = styled.div`
+  flex: 1;
+  padding: 8px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  color: ${({ active, theme }) => (active ? theme.text : theme.textSoft)};
+  background: ${({ active, theme }) => (active ? theme.soft : 'transparent')};
+`;
+
 const AddNewProject = ({ setNewProject, teamId, teamProject }) => {
   const [Loading, setLoading] = useState(false);
   const [disabled, setDisabled] = useState(true);
@@ -285,6 +390,20 @@ const AddNewProject = ({ setNewProject, teamId, teamProject }) => {
   const [showAddProject, setShowAddProject] = useState(true);
   const [showTools, setShowTools] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
+  const [isWarpDrive, setIsWarpDrive] = useState(false);
+  const [warpPrompt, setWarpPrompt] = useState("");
+  const [isWarping, setIsWarping] = useState(false);
+  const [warpStatus, setWarpStatus] = useState("Initiating Warp Sequence...");
+
+  const warpSteps = [
+    "Contacting AI Architect...",
+    "Analyzing Technical Requirements...",
+    "Scaffolding Project Schema...",
+    "Generating Milestones and Works...",
+    "Instantiating Task Atomic Elements...",
+    "Finalizing Database Relationships...",
+    "Stabilizing Wormhole..."
+  ];
 
   const goToAddProject = () => {
     setShowAddProject(true);
@@ -312,7 +431,7 @@ const AddNewProject = ({ setNewProject, teamId, teamProject }) => {
   const [role, setRole] = useState("");
   const [access, setAccess] = useState("");
   const [selectedUsers, setSelectedUsers] = React.useState([]);
-  const [inputs, setInputs] = useState({ img: "", title: "", desc: "" });
+  const [inputs, setInputs] = useState({ img: "", title: "", desc: "", githubRepo: "" });
 
   const token = localStorage.getItem("token");
   const handleSearch = async (e) => {
@@ -359,46 +478,27 @@ const AddNewProject = ({ setNewProject, teamId, teamProject }) => {
   };
 
   const handleInviteAll = (id) => {
-    let teamInvite = false;
-    if (teamInvite) {
-      selectedUsers.map((user) => {
-        inviteTeamMembers(id, user, token)
-          .then((res) => {
-            console.log(res);
-            dispatch(
-              openSnackbar({
-                message: `Invitation sent to ${user.name}`,
-                type: "success",
-              })
-            );
-          })
-          .catch((err) => {
-            console.log(err);
-          });
-      });
-    } else {
-      selectedUsers.map((user) => {
-        inviteProjectMembers(id, user, token)
-          .then((res) => {
-            console.log(res);
-            dispatch(
-              openSnackbar({
-                message: `Invitation sent to ${user.name}`,
-                type: "success",
-              })
-            );
-          })
-          .catch((err) => {
-            console.log(err);
-            dispatch(
-              openSnackbar({
-                message: `Invitation cant be sent to ${user.name}`,
-                type: "error",
-              })
-            );
-          });
-      });
-    }
+    selectedUsers.map((user) => {
+      inviteProjectMembers(id, user, token)
+        .then((res) => {
+          console.log(res);
+          dispatch(
+            openSnackbar({
+              message: `Invitation sent to ${user.name}`,
+              type: "success",
+            })
+          );
+        })
+        .catch((err) => {
+          console.log(err);
+          dispatch(
+            openSnackbar({
+              message: `Invitation cant be sent to ${user.name}`,
+              type: "error",
+            })
+          );
+        });
+    });
   };
 
   const handleChange = (e) => {
@@ -411,10 +511,7 @@ const AddNewProject = ({ setNewProject, teamId, teamProject }) => {
     });
   };
 
-  //add tools part
-
   const [projectTools, setProjectTools] = useState([
-    { name: "", icon: "", link: "" },
     { name: "", icon: "", link: "" },
     { name: "", icon: "", link: "" },
     { name: "", icon: "", link: "" },
@@ -423,7 +520,6 @@ const AddNewProject = ({ setNewProject, teamId, teamProject }) => {
   ]);
   const handleToolschange = (index, event, icon) => {
     let data = [...projectTools];
-    //add it to input fields
     data[index].name = event.target.name;
     data[index].icon = icon;
     data[index].link = event.target.value;
@@ -434,76 +530,85 @@ const AddNewProject = ({ setNewProject, teamId, teamProject }) => {
     setLoading(true);
     setDisabled(true);
     setBackDisabled(true);
-    //remove the empty link objects of project tools
     const tools = projectTools.filter((tool) => tool.link !== "");
+    const tags = inputs.tags ? inputs.tags.filter(tag => tag && tag.trim() !== "") : [];
     const project = {
       ...inputs,
+      tags: tags,
       tools: tools,
     };
     if (teamProject) {
       addTeamProject(teamId, project, token)
         .then(async (res) => {
-          // get the id from res and invite members function call
           handleInviteAll(res.data._id);
-
-          // Refresh user data to update sidebar
           await getUsers(token).then((res) => {
             dispatch(updateUser(res.data));
           });
-
           setLoading(false);
           setNewProject(false);
-          dispatch(
-            openSnackbar({
-              message: "Project created successfully",
-              severity: "success",
-            })
-          );
+          dispatch(openSnackbar({ message: "Project created successfully", severity: "success" }));
         })
         .catch((err) => {
-          console.log(err);
           setLoading(false);
           setDisabled(false);
           setBackDisabled(false);
-          dispatch(
-            openSnackbar({
-              message: "Something went wrong",
-              type: "error",
-            })
-          );
+          dispatch(openSnackbar({ message: err.response?.data?.message || err.message || "Something went wrong", severity: "error" }));
         });
     } else {
       createProject(project, token)
         .then(async (res) => {
-          // get the id from res and invite members function call
           handleInviteAll(res.data._id);
-
-          // Refresh user data to update sidebar
           await getUsers(token).then((res) => {
             dispatch(updateUser(res.data));
           });
-
           setLoading(false);
           setNewProject(false);
-          dispatch(
-            openSnackbar({
-              message: "Project created successfully",
-              severity: "success",
-            })
-          );
+          dispatch(openSnackbar({ message: "Project created successfully", severity: "success" }));
         })
         .catch((err) => {
-          console.log(err);
           setLoading(false);
           setDisabled(false);
           setBackDisabled(false);
-          dispatch(
-            openSnackbar({
-              message: "Something went wrong",
-              type: "error",
-            })
-          );
+          dispatch(openSnackbar({ message: err.response?.data?.message || err.message || "Something went wrong", severity: "error" }));
         });
+    }
+  };
+
+  const handleWarpDrive = async () => {
+    if (!warpPrompt) {
+      dispatch(openSnackbar({ message: "Please enter a prompt for the AI.", severity: "warning" }));
+      return;
+    }
+
+    setIsWarping(true);
+    let stepIndex = 0;
+    const interval = setInterval(() => {
+      if (stepIndex < warpSteps.length) {
+        setWarpStatus(warpSteps[stepIndex]);
+        stepIndex++;
+      }
+    }, 1200);
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await warpDriveProject({ prompt: warpPrompt }, token);
+      clearInterval(interval);
+      setWarpStatus("Warp Sequence Complete! Redirecting...");
+
+      setTimeout(() => {
+        setNewProject(false);
+        window.location.replace(`/project/${res.data.projectId}`);
+      }, 1500);
+
+    } catch (err) {
+      clearInterval(interval);
+      setIsWarping(false);
+      dispatch(
+        openSnackbar({
+          message: err.response?.data?.message || err.message || "Warp sequence failed. Please check your API key.",
+          severity: "error",
+        })
+      );
     }
   };
 
@@ -535,48 +640,101 @@ const AddNewProject = ({ setNewProject, teamId, teamProject }) => {
           </IconButton>
           <Title>Create a new project</Title>
 
+          {isWarping && (
+            <MatrixOverlay>
+              <RocketLaunch style={{ fontSize: 48, color: '#00ff41', marginBottom: '20px' }} />
+              <div style={{ color: '#00ff41', fontWeight: 'bold', fontSize: '18px', letterSpacing: '2px' }}>AI WARP DRIVE ACTIVE</div>
+              <div style={{ height: '100px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <MatrixText>{warpStatus}</MatrixText>
+                <MatrixText style={{ opacity: 0.5 }}>{" > "}{Math.random().toString(36).substring(2, 15)}</MatrixText>
+                <MatrixText style={{ opacity: 0.3 }}>{" > "}SYNC_SEQ_{Math.floor(Math.random() * 10000)}</MatrixText>
+              </div>
+            </MatrixOverlay>
+          )}
+
+          {!showTools && !showAddMember && (
+            <ModeToggle>
+              <ModeButton active={!isWarpDrive} onClick={() => setIsWarpDrive(false)}>Manual Setup</ModeButton>
+              <ModeButton active={isWarpDrive} onClick={() => setIsWarpDrive(true)}>
+                <AutoFixHigh fontSize="inherit" style={{ marginRight: '6px' }} />
+                AI Warp Drive
+              </ModeButton>
+            </ModeToggle>
+          )}
+
           {showAddProject && (
             <>
-              <Label>Project Details :</Label>
-              <ImageSelector inputs={inputs} setInputs={setInputs} style={{ marginTop: "12px" }} />
-              <OutlinedBox style={{ marginTop: "12px" }}>
-                <TextInput
-                  placeholder="Title (Required)*"
-                  type="text"
-                  name="title"
-                  value={inputs.title}
-                  onChange={handleChange}
-                />
-              </OutlinedBox>
-              <OutlinedBox style={{ marginTop: "6px" }}>
-                <Desc
-                  placeholder="Description (Required)* "
-                  name="desc"
-                  rows={5}
-                  value={inputs.desc}
-                  onChange={handleChange}
-                />
-              </OutlinedBox>
-              <OutlinedBox style={{ marginTop: "6px" }}>
-                <Desc
-                  placeholder="Tags: seperate by , eg- Mongo Db , React JS .."
-                  name="tags"
-                  rows={4}
-                  value={inputs.tags}
-                  onChange={handleChange}
-                />
-              </OutlinedBox>
+              {isWarpDrive ? (
+                <WarpContainer>
+                  <div style={{ fontSize: '14px', color: '#888', fontStyle: 'italic' }}>
+                    Describe your project idea (e.g., "A modern coffee shop website with online ordering") and our AI will scaffold the entire task board for you.
+                  </div>
+                  <WarpPromptArea
+                    placeholder="Describe your vision here..."
+                    value={warpPrompt}
+                    onChange={(e) => setWarpPrompt(e.target.value)}
+                  />
+                  <GlowButton onClick={handleWarpDrive}>
+                    <RocketLaunch />
+                    Engage Warp Drive
+                  </GlowButton>
+                  <div style={{ height: '20px' }} />
+                </WarpContainer>
+              ) : (
+                <>
+                  <Label>Project Details :</Label>
 
-              <OutlinedBox
-                button={true}
-                activeButton={!disabled}
-                style={{ marginTop: "22px", marginBottom: "18px" }}
-                onClick={() => {
-                  !disabled && goToAddTools();
-                }}
-              >
-                Next
-              </OutlinedBox>
+                  <ImageSelector inputs={inputs} setInputs={setInputs} style={{ marginTop: "12px" }} />
+                  <OutlinedBox style={{ marginTop: "12px" }}>
+                    <TextInput
+                      placeholder="Title (Required)*"
+                      type="text"
+                      name="title"
+                      value={inputs.title}
+                      onChange={handleChange}
+                    />
+                  </OutlinedBox>
+                  <OutlinedBox style={{ marginTop: "6px", alignItems: "flex-start", padding: "12px 14px" }}>
+                    <Desc
+                      placeholder="Description (Required)* "
+                      name="desc"
+                      rows={5}
+                      value={inputs.desc}
+                      onChange={handleChange}
+                    />
+                  </OutlinedBox>
+                  <OutlinedBox style={{ marginTop: "6px", alignItems: "flex-start", padding: "12px 14px" }}>
+                    <Desc
+                      placeholder="Tags: seperate by , eg- Mongo Db , React JS .."
+                      name="tags"
+                      rows={4}
+                      value={inputs.tags}
+                      onChange={handleChange}
+                    />
+                  </OutlinedBox>
+
+                  <OutlinedBox style={{ marginTop: "6px" }}>
+                    <TextInput
+                      placeholder="GitHub Repository URL (Optional) e.g. facebook/react"
+                      type="text"
+                      name="githubRepo"
+                      value={inputs.githubRepo}
+                      onChange={handleChange}
+                    />
+                  </OutlinedBox>
+
+                  <OutlinedBox
+                    button={true}
+                    activeButton={!disabled}
+                    style={{ marginTop: "22px", marginBottom: "18px" }}
+                    onClick={() => {
+                      !disabled && goToAddTools();
+                    }}
+                  >
+                    Next
+                  </OutlinedBox>
+                </>
+              )}
             </>
           )}
 
@@ -642,8 +800,8 @@ const AddNewProject = ({ setNewProject, teamId, teamProject }) => {
                   />
                 </Search>
                 <UsersList>
-                  {users.map((user) => (
-                    <MemberCard>
+                  {users.map((user, index) => (
+                    <MemberCard key={index}>
                       <UserData>
                         <Avatar
                           sx={{ width: "34px", height: "34px" }}
@@ -689,8 +847,8 @@ const AddNewProject = ({ setNewProject, teamId, teamProject }) => {
                     </div>
                   )}
                   {selectedUsers.length > 0 && <div>Added Members :</div>}
-                  {selectedUsers.map((user) => (
-                    <MemberCard>
+                  {selectedUsers.map((user, index) => (
+                    <MemberCard key={index}>
                       <UserData>
                         <Avatar
                           sx={{ width: "34px", height: "34px" }}

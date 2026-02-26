@@ -155,7 +155,6 @@ const Navbar = ({ menuOpen, setMenuOpen }) => {
       setSignInOpen(false);
       setSignUpOpen(true);
     }
-    console.log(currentUser);
     if (currentUser && !currentUser.verified) {
       setVerifyEmail(true);
     } else {

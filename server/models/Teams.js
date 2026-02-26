@@ -60,6 +60,21 @@ const TeamSchema = new mongoose.Schema({
         type: [mongoose.Schema.Types.ObjectId],
         default: [],
         ref: "Project",
+    },
+    polls: {
+        type: [{
+            question: { type: String, required: true },
+            options: [{
+                text: { type: String, required: true },
+                votes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }]
+            }],
+            createdAt: { type: Date, default: Date.now }
+        }],
+        default: []
+    },
+    organizationId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Organization"
     }
 },
     { timestamps: true }

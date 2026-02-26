@@ -1,8 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled, { keyframes, useTheme } from "styled-components";
 import { Avatar, IconButton, Chip } from "@mui/material";
 import { Favorite, FavoriteBorder, ChatBubbleOutline, Share, MoreHoriz, Search, AddPhotoAlternate, Send } from "@mui/icons-material";
-import { GalaxyButton, MagicCard } from "../components/CreativeComponents";
+import { GalaxyButton, MagicCard, PremiumLoader } from "../components/CreativeComponents";
+import { useDispatch, useSelector } from "react-redux";
+import { openSnackbar } from "../redux/snackbarSlice";
+import { getPosts, createPost, likePost, addComment, getComments } from "../api";
+import { format } from "timeago.js";
 
 // --- Animations ---
 const fadeInUp = keyframes`
@@ -166,14 +170,6 @@ const ActionButton = styled.button`
 `;
 
 // --- Post Card ---
-
-// --- 21st.dev Inspired Components ---
-
-const borderBeam = keyframes`
-  100% {
-    offset-distance: 100%;
-  }
-`;
 
 const BentoGrid = styled.div`
   display: grid;
@@ -361,160 +357,293 @@ const TrendingTopic = styled.h5`
   transition: color 0.2s;
 `;
 
-// --- Dummy Data ---
-
-const DUMMY_POSTS = [
-    {
-        id: 1,
-        name: "Sarah Jenkins",
-        avatar: "https://i.pravatar.cc/150?u=a042581f4e29026704d",
-        time: "2 hours ago",
-        content: "Just launched the new marketing campaign for the Project Alpha! 🚀\n\nThe team did an incredible job coordinating with the design department. Loving the new features we implemented this sprint.",
-        image: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
-        likes: 24,
-        comments: 5,
-        isLiked: true,
-    },
-    {
-        id: 2,
-        name: "Michael Chen",
-        avatar: "https://i.pravatar.cc/150?u=a042581f4e29026024d",
-        time: "4 hours ago",
-        content: "Anyone have recommendations for managing state in large React applications? We're looking at Redux Toolkit vs just Context API for the new dashboard module. #react #development",
-        likes: 12,
-        comments: 18,
-        isLiked: false,
-    },
-    {
-        id: 3,
-        name: "Emily Davis",
-        avatar: "https://i.pravatar.cc/150?u=a042581f4e29026704b",
-        time: "Yesterday",
-        content: "Design system update is live! Check out the new component library documentation. We've added 3D elements and new glassmorphism utilities.",
-        image: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?ixlib=rb-4.0.3&auto=format&fit=crop&w=1074&q=80",
-        likes: 45,
-        comments: 2,
-        isLiked: false,
-    }
-];
-
 const TRENDING = [
-    { tag: "Development", topic: "#Reactjs2024" },
-    { tag: "Design", topic: "#UIUXTrends" },
-    { tag: "Productivity", topic: "#RemoteWorkLife" },
-    { tag: "Announcements", topic: "#Q1Goals" },
+  { tag: "Development", topic: "#Reactjs2024" },
+  { tag: "Design", topic: "#UIUXTrends" },
+  { tag: "Productivity", topic: "#RemoteWorkLife" },
+  { tag: "Announcements", topic: "#Q1Goals" },
 ];
+
+const CommentsSection = styled.div`
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid ${({ theme }) => theme.soft + "30"};
+  animation: ${fadeInUp} 0.5s ease-out;
+`;
+
+const CommentItem = styled.div`
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+`;
+
+const CommentInputWrapper = styled.div`
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 16px;
+`;
+
+const CommentInput = styled.input`
+    width: 100%;
+    background: ${({ theme }) => theme.bg};
+    border: 1px solid ${({ theme }) => theme.soft};
+    padding: 10px 16px;
+    border-radius: 20px;
+    color: ${({ theme }) => theme.text};
+    outline: none;
+    font-size: 14px;
+    transition: all 0.3s;
+
+    &:focus {
+        border-color: ${({ theme }) => theme.primary};
+    }
+`;
 
 const CommunityNew = () => {
-    const theme = useTheme();
-    const [posts, setPosts] = useState(DUMMY_POSTS);
+  const theme = useTheme();
+  const dispatch = useDispatch();
+  const { currentUser } = useSelector((state) => state.user);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [newPost, setNewPost] = useState("");
+  const [postLoading, setPostLoading] = useState(false);
+  const [openComments, setOpenComments] = useState(null); // ID of post with active comments section
+  const [comments, setComments] = useState([]); // Comments for the active post
+  const [commentText, setCommentText] = useState("");
+  const [commentLoading, setCommentLoading] = useState(false);
 
-    const handleLike = (id) => {
-        setPosts(posts.map(post =>
-            post.id === id
-                ? { ...post, isLiked: !post.isLiked, likes: post.isLiked ? post.likes - 1 : post.likes + 1 }
-                : post
-        ));
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem("token");
+        const res = await getPosts(token);
+        setPosts(res.data);
+        setLoading(false);
+      } catch (err) {
+        dispatch(openSnackbar({ message: err.response?.data?.message || err.message, type: "error" }));
+        setLoading(false);
+      }
     };
 
-    return (
-        <Container>
-            <Header>
-                <Title>Community Hub</Title>
-                <Subtitle>Connect, share, and grow with your team.</Subtitle>
-            </Header>
+    if (currentUser) {
+      fetchPosts();
+    }
+  }, [currentUser, dispatch]);
 
-            <ContentWrapper>
-                <MainFeed>
-                    <CreatePostBox>
-                        <InputWrapper>
-                            <Avatar src="https://i.pravatar.cc/150?u=myuser" sx={{ width: 44, height: 44 }} />
-                            <StyledInput placeholder="Share something with the community..." />
-                        </InputWrapper>
-                        <ActionsBar>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                <ActionButton><AddPhotoAlternate sx={{ fontSize: 20 }} /> Media</ActionButton>
-                                <ActionButton><FavoriteBorder sx={{ fontSize: 20 }} /> Feeling</ActionButton>
-                            </div>
-                            <GalaxyButton style={{ padding: '8px 24px', fontSize: '14px' }}>
-                                Post <Send sx={{ fontSize: 16, marginLeft: '6px' }} />
-                            </GalaxyButton>
-                        </ActionsBar>
-                    </CreatePostBox>
+  const handleLike = async (id) => {
+    try {
+      const token = localStorage.getItem("token");
+      await likePost(id, token);
+      setPosts(posts.map(post =>
+        post._id === id
+          ? {
+            ...post,
+            likes: post.likes.includes(currentUser._id)
+              ? post.likes.filter(uid => uid !== currentUser._id)
+              : [...post.likes, currentUser._id]
+          }
+          : post
+      ));
+    } catch (err) {
+      dispatch(openSnackbar({ message: "Failed to like post", type: "error" }));
+    }
+  };
 
-                    {posts.map((post) => (
-                        <PostCard key={post.id}>
-                            <PostHeader>
-                                <UserInfo>
-                                    <Avatar src={post.avatar} sx={{ width: 42, height: 42 }} />
-                                    <div>
-                                        <div style={{ display: 'flex', alignItems: 'center' }}>
-                                            <UserName>{post.name}</UserName>
-                                            {post.id === 1 && <Badge>Top Contributor</Badge>}
-                                        </div>
-                                        <PostMeta>
-                                            {post.time} • <GalaxyButton as="span" style={{ padding: '2px 8px', fontSize: '10px', height: 'auto', minHeight: 'auto', background: theme.primary + '20', color: theme.primary, boxShadow: 'none' }}>Team</GalaxyButton>
-                                        </PostMeta>
-                                    </div>
-                                </UserInfo>
-                                <IconButton size="small"><MoreHoriz /></IconButton>
-                            </PostHeader>
-                            <PostContent>{post.content}</PostContent>
-                            {post.image && <PostImage src={post.image} alt="Post content" />}
+  const handleCreatePost = async () => {
+    if (!newPost.trim()) return;
+    setPostLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await createPost({ desc: newPost }, token);
+      // Assuming the backend returns the full new post object.
+      // If the backend returns consistent structure, prepending it should work.
+      setPosts([res.data, ...posts]);
+      setNewPost("");
+      dispatch(openSnackbar({ message: "Post created successfully!", type: "success" }));
+      setPostLoading(false);
+    } catch (err) {
+      dispatch(openSnackbar({ message: err.response?.data?.message || err.message, type: "error" }));
+      setPostLoading(false);
+    }
+  };
 
-                            <InteractionBar>
-                                <StatItem onClick={() => handleLike(post.id)} liked={post.isLiked}>
-                                    {post.isLiked ? <Favorite /> : <FavoriteBorder />} {post.likes}
-                                </StatItem>
-                                <StatItem>
-                                    <ChatBubbleOutline /> {post.comments}
-                                </StatItem>
-                                <StatItem>
-                                    <Share /> Share
-                                </StatItem>
-                            </InteractionBar>
-                        </PostCard>
+  const isLiked = (post) => {
+    return post.likes.includes(currentUser?._id);
+  };
+
+  const handleCommentClick = async (postId) => {
+    if (openComments === postId) {
+      setOpenComments(null);
+      setComments([]);
+      return;
+    }
+    setOpenComments(postId);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await getComments(postId, token);
+      setComments(res.data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const handleAddComment = async (postId) => {
+    if (!commentText.trim()) return;
+    setCommentLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await addComment({ postId, desc: commentText }, token);
+      setComments([res.data, ...comments]);
+      setCommentText("");
+      // Update comments count in posts list locally
+      setPosts(posts.map(p => p._id === postId ? { ...p, comments: [...p.comments, res.data._id] } : p));
+      setCommentLoading(false);
+    } catch (err) {
+      dispatch(openSnackbar({ message: err.response?.data?.message || err.message, type: "error" }));
+      setCommentLoading(false);
+    }
+  };
+
+
+  return (
+    <Container>
+      <Header>
+        <Title>Community Hub</Title>
+        <Subtitle>Connect, share, and grow with your team.</Subtitle>
+      </Header>
+
+      <ContentWrapper>
+        <MainFeed>
+          <CreatePostBox>
+            <InputWrapper>
+              <Avatar src={currentUser?.img} sx={{ width: 44, height: 44 }}>{currentUser?.name[0]}</Avatar>
+              <StyledInput
+                placeholder="Share something with the community..."
+                value={newPost}
+                onChange={(e) => setNewPost(e.target.value)}
+              />
+            </InputWrapper>
+            <ActionsBar>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <ActionButton><AddPhotoAlternate sx={{ fontSize: 20 }} /> Media</ActionButton>
+                <ActionButton><FavoriteBorder sx={{ fontSize: 20 }} /> Feeling</ActionButton>
+              </div>
+              <GalaxyButton
+                style={{ padding: '8px 24px', fontSize: '14px' }}
+                onClick={handleCreatePost}
+                disabled={postLoading}
+              >
+                {postLoading ? "Posting..." : "Post"} <Send sx={{ fontSize: 16, marginLeft: '6px' }} />
+              </GalaxyButton>
+            </ActionsBar>
+          </CreatePostBox>
+
+          {loading ? (
+            <div style={{ display: "flex", justifyContent: "center", padding: "40px" }}>
+              <PremiumLoader />
+            </div>
+          ) : (
+            posts.map((post) => (
+              <PostCard key={post._id}>
+                <PostHeader>
+                  <UserInfo>
+                    <Avatar src={post.img} sx={{ width: 42, height: 42 }}>{post.name?.[0]}</Avatar>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <UserName>{post.name}</UserName>
+                        {/* Logic for badges can be improved based on user role */}
+                      </div>
+                      <PostMeta>
+                        {format(post.createdAt)}
+                      </PostMeta>
+                    </div>
+                  </UserInfo>
+                  <IconButton size="small"><MoreHoriz /></IconButton>
+                </PostHeader>
+                <PostContent>{post.desc}</PostContent>
+                {post.img && <PostImage src={post.img} alt="Post content" />}
+
+                <InteractionBar>
+                  <StatItem onClick={() => handleLike(post._id)} liked={isLiked(post)}>
+                    {isLiked(post) ? <Favorite /> : <FavoriteBorder />} {post.likes.length}
+                  </StatItem>
+                  <StatItem onClick={() => handleCommentClick(post._id)}>
+                    <ChatBubbleOutline /> {post.comments?.length || 0}
+                  </StatItem>
+                  <StatItem>
+                    <Share /> Share
+                  </StatItem>
+                </InteractionBar>
+
+                {openComments === post._id && (
+                  <CommentsSection>
+                    {comments.map((comment) => (
+                      <CommentItem key={comment._id}>
+                        <Avatar src={comment.img} sx={{ width: 32, height: 32 }}>{comment.name?.[0]}</Avatar>
+                        <div>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <b style={{ fontSize: '14px', color: theme.text }}>{comment.name}</b>
+                            <span style={{ fontSize: '11px', color: theme.textSoft }}>{format(comment.createdAt)}</span>
+                          </div>
+                          <p style={{ fontSize: '13px', color: theme.textSoft, marginTop: '2px' }}>{comment.desc}</p>
+                        </div>
+                      </CommentItem>
                     ))}
-                </MainFeed>
+                    {comments.length === 0 && <div style={{ fontSize: '13px', color: theme.textSoft, marginBottom: '10px' }}>No comments yet.</div>}
 
-                <Sidebar>
-                    <BentoGrid>
-                        <BentoItem>
-                            <SidebarTitle>🔥 Trending Topics</SidebarTitle>
-                            {TRENDING.map((item, index) => (
-                                <TrendingItem key={index}>
-                                    <TrendingTag>{item.tag}</TrendingTag>
-                                    <TrendingTopic>{item.topic}</TrendingTopic>
-                                </TrendingItem>
-                            ))}
-                        </BentoItem>
+                    <CommentInputWrapper>
+                      <Avatar src={currentUser?.img} sx={{ width: 32, height: 32 }}>{currentUser?.name[0]}</Avatar>
+                      <CommentInput
+                        placeholder="Write a comment..."
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddComment(post._id)}
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={() => handleAddComment(post._id)}
+                        disabled={commentLoading}
+                        color="primary"
+                      >
+                        <Send fontSize="small" />
+                      </IconButton>
+                    </CommentInputWrapper>
+                  </CommentsSection>
+                )}
 
-                        <BentoItem>
-                            <SidebarTitle>👥 Suggested People</SidebarTitle>
-                            {[1, 2, 3].map((_, i) => (
-                                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <Avatar src={`https://i.pravatar.cc/150?u=${i + 20}`} sx={{ width: 36, height: 36 }} />
-                                        <div>
-                                            <h5 style={{ margin: 0, fontSize: '14px', color: theme.text }}>User {i + 1}</h5>
-                                            <span style={{ fontSize: '12px', color: theme.textSoft }}>Developer</span>
-                                        </div>
-                                    </div>
-                                    <Chip label="Follow" size="small" component="button" clickable sx={{ backgroundColor: theme.primary + '20', color: theme.primary, fontWeight: 600, border: 'none' }} />
-                                </div>
-                            ))}
-                        </BentoItem>
+              </PostCard>
+            ))
+          )}
+          {!loading && posts.length === 0 && (
+            <div style={{ textAlign: "center", color: theme.textSoft, padding: "20px" }}>
+              No posts yet. Be the first to share something!
+            </div>
+          )}
+        </MainFeed>
 
-                        <BentoItem style={{ background: 'linear-gradient(135deg, #854CE6 0%, #6A38C2 100%)', color: 'white' }}>
-                            <SidebarTitle style={{ color: 'white' }}>✨ Go Pro</SidebarTitle>
-                            <p style={{ fontSize: '14px', opacity: 0.9, marginBottom: '16px' }}>Unlock exclusive features and analytics.</p>
-                            <button style={{ width: '100%', padding: '10px', borderRadius: '10px', background: 'white', color: '#854CE6', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>Upgrade Now</button>
-                        </BentoItem>
-                    </BentoGrid>
-                </Sidebar>
-            </ContentWrapper>
-        </Container>
-    );
+        <Sidebar>
+          <BentoGrid>
+            <BentoItem>
+              <SidebarTitle>🔥 Trending Topics</SidebarTitle>
+              {TRENDING.map((item, index) => (
+                <TrendingItem key={index}>
+                  <TrendingTag>{item.tag}</TrendingTag>
+                  <TrendingTopic>{item.topic}</TrendingTopic>
+                </TrendingItem>
+              ))}
+            </BentoItem>
+
+
+
+
+          </BentoGrid>
+        </Sidebar>
+      </ContentWrapper>
+    </Container>
+  );
 };
 
 export default CommunityNew;

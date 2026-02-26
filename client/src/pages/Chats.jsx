@@ -1,7 +1,10 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
+import { useSelector } from 'react-redux'
+import { userChats } from '../api'
 import ChatContainer from '../components/ChatContainer'
 import ChatContact from '../components/ChatContact'
 import styled from 'styled-components'
+import { io } from "socket.io-client";
 
 const Container = styled.div`
   display: flex;
@@ -70,23 +73,53 @@ const Chats = () => {
     return () => window.removeEventListener("resize", handleWindowResize)
   }, [])
 
-  const [showChat, setShowChat] = React.useState(false)
+  const { currentUser } = useSelector((state) => state.user);
+  const [chats, setChats] = useState([]);
+  const [currentChat, setCurrentChat] = useState(null);
+  const [showChat, setShowChat] = useState(false);
+  const [socket, setSocket] = useState(null);
+
+  useEffect(() => {
+    if (currentUser) {
+      const newSocket = io("http://localhost:8700");
+      setSocket(newSocket);
+      newSocket.emit("add-user", currentUser._id);
+
+      return () => {
+        newSocket.disconnect();
+      }
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    const getChats = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await userChats(currentUser._id, token);
+        setChats(res.data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    if (currentUser) getChats();
+  }, [currentUser]);
+
 
   return (
     <Container>
       <Wrapper>
         {width < breakpoint ?
           (showChat ?
-            <ChatContainer showChat={showChat} setShowChat={setShowChat} />
+            <ChatContainer showChat={showChat} setShowChat={setShowChat} currentChat={currentChat} currentUser={currentUser} socket={socket} />
             :
-            <ChatContact showChat={showChat} setShowChat={setShowChat} />)
+            <ChatContact showChat={showChat} setShowChat={setShowChat} chats={chats} setCurrentChat={setCurrentChat} currentUser={currentUser} setChats={setChats} socket={socket} />)
           : (
             <>
               <ChatsContact>
-                <ChatContact showChat={showChat} setShowChat={setShowChat} />
+                <ChatContact showChat={showChat} setShowChat={setShowChat} chats={chats} setCurrentChat={setCurrentChat} currentUser={currentUser} setChats={setChats} socket={socket} />
               </ChatsContact>
               <ChatsContainer>
-                <ChatContainer showChat={showChat} setShowChat={setShowChat} />
+                <ChatContainer showChat={showChat} setShowChat={setShowChat} currentChat={currentChat} currentUser={currentUser} socket={socket} />
               </ChatsContainer>
             </>
           )}

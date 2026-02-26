@@ -132,7 +132,7 @@ const OutlinedBox = styled.div`
     button &&
     `
     user-select: none; 
-  border: none;
+    border: none;
   font-weight: 600;
   height: 38px;
     background: ${theme.soft};
@@ -141,7 +141,7 @@ const OutlinedBox = styled.div`
     activeButton &&
     `
     user-select: none; 
-  border: none;
+    border: none;
   height: 38px;
     background: ${theme.primary};
     color: white;`}
@@ -242,7 +242,7 @@ const InviteButton = styled.button`
   }
 `;
 
-const AddWork = ({ ProjectMembers, ProjectId, setCreated }) => {
+const AddWork = ({ ProjectMembers, ProjectId, setCreated, closeForm }) => {
   const dispatch = useDispatch();
   //hooks for different steps of the work card
   const [step, setStep] = useState(0);
@@ -253,6 +253,9 @@ const AddWork = ({ ProjectMembers, ProjectId, setCreated }) => {
   const [desc, setDesc] = useState("");
   const [tags, setTags] = useState("");
   const [taskIndex, setTaskIndex] = useState(0);
+  const [selectedMembers, setSelectedMembers] = useState([]);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const token = localStorage.getItem("token");
 
@@ -260,6 +263,7 @@ const AddWork = ({ ProjectMembers, ProjectId, setCreated }) => {
   const [task, setTask] = useState([
     {
       task: "",
+      desc: "",
       start_date: "",
       end_date: "",
       members: [],
@@ -272,17 +276,11 @@ const AddWork = ({ ProjectMembers, ProjectId, setCreated }) => {
   };
 
   const goToAddTask = () => {
-    //check if all the fields are filled
-    if (!title || !desc) {
-      alert("Please fill all the fields");
-      return;
-    } else {
-      setStep(step + 1);
-    }
+    // Deprecated: We skip step 1 now and just create directly via createWorkCard.
   };
 
   const addTasks = () => {
-    let newfield = { task: "", start_date: "", end_date: "", members: [] };
+    let newfield = { task: "", desc: "", start_date: "", end_date: "", members: [] };
     setTask([...task, newfield]);
   };
 
@@ -317,45 +315,36 @@ const AddWork = ({ ProjectMembers, ProjectId, setCreated }) => {
 
   //create new work card
   const createWorkCard = () => {
-    //check if all the tasks are filled
-    let check = task.find((item) => !item.task || !item.start_date);
-    if (check) {
-      alert("Please fill all the tasks");
-      return;
-    }
-    //check if all the members are added
-    let checkMember = task.find((item) => item.members.length === 0);
-    if (checkMember) {
-      alert("Please add members to all the tasks");
+    if (!title || !desc) {
+      alert("Please fill the title and description fields");
       return;
     }
 
-    //create new work card with the members id only
-    let newTask = task.map((item) => {
-      let members = item.members.map((member) => member.id);
-      return {
-        task: item.task,
-        start_date: item.start_date,
-        end_date: item.end_date,
-        members,
-      };
-    });
+    // Auto-generate a single task based on the Work's title and description
+    // This gives the user the illusion of just creating a "Task" directly on the board.
+    let generatedTask = [{
+      task: title,
+      desc: desc,
+      start_date: startDate || new Date().toISOString().split('T')[0],
+      end_date: endDate || new Date().toISOString().split('T')[0],
+      members: selectedMembers.map((m) => m.id)
+    }];
 
     let newWorkCard = {
       title,
       desc,
-      //array of tags seperated by comma
-      tags: tags.split(","),
-      tasks: newTask,
+      tags: tags ? tags.split(",") : [],
+      tasks: generatedTask,
     };
 
     console.log(newWorkCard);
     setLoading(true);
-    addWorks(ProjectId, newWorkCard,token)
+    addWorks(ProjectId, newWorkCard, token)
       .then((res) => {
         setLoading(false);
         emptyForm();
         setCreated(true);
+        if (closeForm) closeForm();
         dispatch(
           openSnackbar({
             message: "Created a work card Successfully",
@@ -367,7 +356,7 @@ const AddWork = ({ ProjectMembers, ProjectId, setCreated }) => {
         console.log(err);
         dispatch(
           openSnackbar({
-            message: err.message,
+            message: err.response?.data?.message || err.message,
             severity: "error",
           })
         );
@@ -382,11 +371,15 @@ const AddWork = ({ ProjectMembers, ProjectId, setCreated }) => {
     setTask([
       {
         task: "",
+        desc: "",
         start_date: "",
         end_date: "",
         members: [],
       },
     ]);
+    setSelectedMembers([]);
+    setStartDate("");
+    setEndDate("");
     setStep(0);
   };
 
@@ -395,7 +388,7 @@ const AddWork = ({ ProjectMembers, ProjectId, setCreated }) => {
       {step === 0 && (
         <>
           <Top>
-            <Title>Create new work</Title>
+            <Title>Create Task</Title>
           </Top>
           <OutlinedBox style={{ marginTop: "8px" }}>
             <TextInput
@@ -407,187 +400,83 @@ const AddWork = ({ ProjectMembers, ProjectId, setCreated }) => {
           </OutlinedBox>
           <OutlinedBox>
             <TextArea
-              placeholder="What is the new work about?"
+              placeholder="What is this task about?"
               name="desc"
               rows={4}
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
             />
           </OutlinedBox>
-          <OutlinedBox>
-            <TextArea
-              placeholder="Tags seperated by comma"
-              name="tags"
-              rows={2}
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-            />
-          </OutlinedBox>
+          <FlexDisplay>
+            <OutlinedBox style={{ width: "100%", flexDirection: "column", alignItems: "flex-start", padding: "8px 12px", gap: "4px" }}>
+              <div style={{ fontSize: "11px", fontWeight: "600", color: "inherit" }}>Start Date</div>
+              <TextInput
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                style={{ color: "inherit" }}
+              />
+            </OutlinedBox>
+            <OutlinedBox style={{ width: "100%", flexDirection: "column", alignItems: "flex-start", padding: "8px 12px", gap: "4px" }}>
+              <div style={{ fontSize: "11px", fontWeight: "600", color: "inherit" }}>End Date</div>
+              <TextInput
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                style={{ color: "inherit" }}
+              />
+            </OutlinedBox>
+          </FlexDisplay>
+
+
+          {ProjectMembers && ProjectMembers.length > 0 && (
+            <OutlinedBox style={{ flexDirection: "column", alignItems: "flex-start", padding: "12px", height: "auto", gap: "8px" }}>
+              <div style={{ fontSize: "12px", fontWeight: "600", color: "inherit" }}>Assign Members</div>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                {ProjectMembers.map((member) => {
+                  if (!member || !member.id) return null;
+                  const isSelected = selectedMembers.some((m) => m.id === member.id._id);
+                  return (
+                    <div
+                      key={member.id._id}
+                      onClick={() => {
+                        if (isSelected) {
+                          setSelectedMembers((prev) => prev.filter((m) => m.id !== member.id._id));
+                        } else {
+                          setSelectedMembers((prev) => [...prev, { id: member.id._id, img: member.id.img }]);
+                        }
+                      }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        padding: "6px 12px",
+                        borderRadius: "20px",
+                        background: isSelected ? "rgba(0, 148, 234, 0.15)" : "transparent",
+                        border: isSelected ? "1px solid #0094ea" : "1px solid #555",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                      }}
+                    >
+                      <Avatar src={member.id.img} sx={{ width: 20, height: 20 }} />
+                      <span style={{ fontSize: "12px", color: isSelected ? "#0094ea" : "inherit" }}>
+                        {member.id.name || "Member"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </OutlinedBox>
+          )}
+
           <OutlinedBox
             button
             activeButton
             style={{ marginTop: "14px" }}
-            onClick={() => goToAddTask()}
+            onClick={() => createWorkCard()}
           >
-            Next
+            {loading ? <CircularProgress size={20} color="inherit" /> : "Create Task"}
           </OutlinedBox>
-        </>
-      )}
-      {step === 1 && (
-        <>
-          <Top>
-            <Title>Add Tasks </Title>
-          </Top>
-          {task.map((task, index) => (
-            <Task>
-              <OutlinedBox style={{ marginTop: "8px" }}>
-                <TextInput
-                  placeholder="Task"
-                  type="text"
-                  name="task"
-                  value={task.task}
-                  onChange={(e) => handleTaskChange(index, e)}
-                />
-              </OutlinedBox>
-              <FlexDisplay>
-                <OutlinedBox style={{ marginTop: "0px" }}>
-                  <TextInput
-                    type="text"
-                    onFocus={(e) => (e.target.type = "date")}
-                    onBlur={(e) => (e.target.type = "text")}
-                    id="start"
-                    name="start_date"
-                    style={{ fontSize: "12px" }}
-                    placeholder="Start date"
-                    value={task.start_date}
-                    onChange={(e) => handleTaskChange(index, e)}
-                  />
-                </OutlinedBox>
-                -
-                <OutlinedBox style={{ marginTop: "0px" }}>
-                  <TextInput
-                    type="text"
-                    onFocus={(e) => (e.target.type = "date")}
-                    onBlur={(e) => (e.target.type = "text")}
-                    id="end"
-                    name="end_date"
-                    style={{ fontSize: "12px" }}
-                    placeholder="End date"
-                    value={task.end_date}
-                    onChange={(e) => handleTaskChange(index, e)}
-                  />
-                </OutlinedBox>
-              </FlexDisplay>
-              <Bottom>
-                <Members>
-                  {task.members.map((member, memberIndex) => (
-                    <MemberGroup>
-                      <Avatar
-                        sx={{ width: "20px", height: "20px" }}
-                        src={member.img}
-                      />
-                      <CloseRounded
-                        onClick={() => removeMember(index, memberIndex)}
-                        style={{ fontSize: "18px" }}
-                      />
-                    </MemberGroup>
-                  ))}
-                </Members>
-                <TextBtn
-                  style={{ padding: "6px", textAlign: "end" }}
-                  onClick={() => addMember(index)}
-                >
-                  Add member
-                </TextBtn>
-              </Bottom>
-              <TextBtn
-                style={{
-                  marginLeft: "2px",
-                  marginBottom: "10px",
-                  marginTop: "4px",
-                  color: "#ff4444",
-                }}
-                onClick={() => deleteTasks(index)}
-              >
-                Remove Task
-              </TextBtn>
-            </Task>
-          ))}
-          <Modal open={selectMember} onClose={() => setSelectMember(false)}>
-            <Wrapper>
-              <Body>
-                <FlexDisplay>
-                  <IconButton
-                    style={{
-                      position: "absolute",
-                      right: "10px",
-                      cursor: "pointer",
-                      color: "inherit",
-                    }}
-                    onClick={() => setSelectMember(false)}
-                  >
-                    <CloseRounded style={{ color: "inherit" }} />
-                  </IconButton>
-                  <Title style={{ paddingLeft: "10px" }}>Select member</Title>
-                </FlexDisplay>
-
-                <UsersList>
-                  {ProjectMembers.map((user) => (
-                    <MemberCard>
-                      <UserData>
-                        <Avatar
-                          sx={{ width: "34px", height: "34px" }}
-                          src={user.id.img}
-                        >
-                          {user.id.name.charAt(0)}
-                        </Avatar>
-                        <Details>
-                          <Name>{user.id.name}</Name>
-                          <EmailId>{user.id.email}</EmailId>
-                        </Details>
-                      </UserData>
-                      {!task[taskIndex].members.find(
-                        (member) => member.id === user.id._id
-                      ) && (
-                        <InviteButton
-                          onClick={() => AddToMember(user, taskIndex)}
-                        >
-                          Add
-                        </InviteButton>
-                      )}
-                    </MemberCard>
-                  ))}
-                </UsersList>
-              </Body>
-            </Wrapper>
-          </Modal>
-          <OutlinedBox
-            button
-            activeButton
-            style={{ height: "30px", backgroundColor: "#0094ea" }}
-            onClick={() => addTasks()}
-          >
-            Add task
-          </OutlinedBox>
-
-          <FlexDisplay>
-            <OutlinedBox
-              button
-              style={{ width: "100%" }}
-              onClick={() => setStep(step - 1)}
-            >
-              Back
-            </OutlinedBox>
-            <OutlinedBox
-              button
-              activeButton
-              style={{ width: "100%" }}
-              onClick={() => createWorkCard()}
-              // onClick={() => setStep(step + 1)}
-            >
-              {loading ? <CircularProgress size={20} /> : "Create"}
-            </OutlinedBox>
-          </FlexDisplay>
         </>
       )}
     </Container>

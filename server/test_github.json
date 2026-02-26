@@ -1,0 +1,28 @@
+[
+  {
+    "id": "8582747638",
+    "type": "PushEvent",
+    "actor": {
+      "id": 90711330,
+      "login": "Karthikeyasharma979",
+      "display_login": "Karthikeyasharma979",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/Karthikeyasharma979",
+      "avatar_url": "https://avatars.githubusercontent.com/u/90711330?"
+    },
+    "repo": {
+      "id": 1135792278,
+      "name": "Karthikeyasharma979/smart",
+      "url": "https://api.github.com/repos/Karthikeyasharma979/smart"
+    },
+    "payload": {
+      "repository_id": 1135792278,
+      "push_id": 30877706203,
+      "ref": "refs/heads/main",
+      "head": "fd1764c728d4f2f4c21718c3e929e418266d432e",
+      "before": "1c50f4736c50f4fecc4b7b50943fc3b74e6a677c"
+    },
+    "public": true,
+    "created_at": "2026-02-19T01:09:58Z"
+  }
+]

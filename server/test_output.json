@@ -1,0 +1,41 @@
+[
+  {
+    "_id": "6997c828157f10778ca393e6",
+    "projectId": "699690022089ce34351c25ee",
+    "task": "Backend Auth Task",
+    "start_date": "2026-02-20",
+    "end_date": "2026-02-20",
+    "members": [],
+    "status": "Working",
+    "time_tracked": 0.3675833333333333,
+    "active_session": {
+      "start_time": null,
+      "is_active": false
+    },
+    "impact_risk": "High",
+    "impact_modules": [
+      "Authentication",
+      "WebSocket / Realtime"
+    ],
+    "impact_notes": "Changes to the authentication flow carry high security risks. Ensure all test coverage passes. Realtime sync changes require multi-user verification to prevent memory leaks or split-brain states.",
+    "createdAt": "2026-02-20T02:34:16.383Z",
+    "updatedAt": "2026-02-20T02:36:26.585Z",
+    "__v": 0,
+    "workId": "6997c828157f10778ca393e8"
+  },
+  {
+    "_id": "69638581e18b5a75d9e7f6cf",
+    "projectId": "69638419e18b5a75d9e7f650",
+    "task": "JAva",
+    "start_date": "2026-01-12",
+    "end_date": "2026-01-15",
+    "members": [
+      "696384d6e18b5a75d9e7f6a6"
+    ],
+    "status": "Completed",
+    "createdAt": "2026-01-11T11:12:01.659Z",
+    "updatedAt": "2026-01-11T11:21:08.556Z",
+    "__v": 0,
+    "workId": "69638581e18b5a75d9e7f6d1"
+  }
+]

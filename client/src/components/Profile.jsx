@@ -147,7 +147,7 @@ const Profile = ({ open, setOpen, currentUser }) => {
                 setOpen(false);
             })
             .catch((err) => {
-                dispatch(openSnackbar({ message: err.message, type: "error" }));
+                dispatch(openSnackbar({ message: err.response?.data?.message || err.message, type: "error" }));
             });
         setLoading(false);
     };

@@ -20,6 +20,8 @@ import { getTeams } from "../api/index";
 import AddNewProject from "../components/AddNewProject";
 import UpdateTeam from "../components/UpdateTeam";
 import DeletePopup from "../components/DeletePopup";
+import CreatePoll from "../components/CreatePoll";
+import PollCard from "../components/PollCard";
 
 const Container = styled.div`
   padding: 14px 14px;
@@ -265,6 +267,8 @@ const Teams = () => {
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')))
 
 
+  const [openCreatePoll, setOpenCreatePoll] = useState(false);
+
   //hooks for updates
   //use state enum to check for which updation
   const [openUpdate, setOpenUpdate] = useState({ state: false, type: "all", data: item });
@@ -296,16 +300,17 @@ const Teams = () => {
     window.scrollTo(0, 0);
     getTeamDetails();
     setUser(JSON.parse(localStorage.getItem('user')))
-  }, [id, currentUser, newProject, openUpdate, openDelete]);
+  }, [id, currentUser, newProject, openUpdate, openDelete, openCreatePoll]);
 
 
   return (
     <Container>
       {newProject && <AddNewProject setNewProject={setNewProject} teamId={id} teamProject={true} />}
+      {openCreatePoll && <CreatePoll setOpenCreatePoll={setOpenCreatePoll} teamId={id} onPollCreated={() => getTeamDetails()} />}
       {openUpdate.state && <UpdateTeam openUpdate={openUpdate} setOpenUpdate={setOpenUpdate} type={openUpdate.type} />}
       {openDelete.state && <DeletePopup openDelete={openDelete} setOpenDelete={setOpenDelete} type={openDelete.type} />}
       {loading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: '12px 0px',height: '300px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: '12px 0px', height: '300px' }}>
           <CircularProgress />
         </div>
       ) : (
@@ -420,6 +425,32 @@ const Teams = () => {
             <Extra>
               <SubCards>
                 <SubCardTop>
+                  <SubCardsTitle>Active Polls</SubCardsTitle>
+                  <IcoBtn onClick={() => setOpenCreatePoll(true)}>
+                    <Add sx={{ fontSize: "20px" }} />
+                  </IcoBtn>
+                </SubCardTop>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+                  {item.polls && item.polls.length > 0 ? (
+                    item.polls.slice().reverse().map((poll) => (
+                      <PollCard
+                        key={poll._id}
+                        poll={poll}
+                        teamId={id}
+                        currentUserId={currentUser._id}
+                        onVote={() => getTeamDetails()}
+                      />
+                    ))
+                  ) : (
+                    <div style={{ padding: '10px', textAlign: 'center', color: '#888', fontSize: '14px' }}>
+                      No polls created yet.
+                    </div>
+                  )}
+                </div>
+              </SubCards>
+
+              <SubCards>
+                <SubCardTop>
                   <SubCardsTitle>Members</SubCardsTitle>
                   <IcoBtn onClick={() => setOpenUpdate({ state: true, type: 'member', data: item })}>
                     <Edit sx={{ fontSize: "16px" }} />
@@ -441,19 +472,6 @@ const Teams = () => {
                     <ToolsCard tool={tool} />
                   ))}
                 </Tools>
-              </SubCards>
-              <SubCards>
-                <SubCardTop>
-                  <SubCardsTitle>Idea List</SubCardsTitle>
-                  <IcoBtn>
-                    <Add sx={{ fontSize: "20px" }} />
-                  </IcoBtn>
-                </SubCardTop>
-                <Ideas>
-                  {/*ideas.map((i, id) => (
-                <IdeaCard idea={i} no={id} key={id} />
-              ))*/}
-                </Ideas>
               </SubCards>
             </Extra>
           </Body>

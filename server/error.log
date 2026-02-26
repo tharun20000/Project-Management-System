@@ -1,0 +1,179 @@
+2026-02-20T02:21:27.525Z - ValidationError: Tasks validation failed: organizationId: Path `organizationId` is required.
+    at Document.invalidate (D:\Projects\projects\Project-Management-App\server\node_modules\mongoose\lib\document.js:3097:32)
+    at D:\Projects\projects\Project-Management-App\server\node_modules\mongoose\lib\document.js:2885:17
+    at D:\Projects\projects\Project-Management-App\server\node_modules\mongoose\lib\schematype.js:1349:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11)
+2026-02-20T02:24:46.534Z - Error: Task not found!
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at startTimer (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:766:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-20T02:35:23.718Z - Error: Task not found!
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at startTimer (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:766:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-20T02:35:59.927Z - Error: Task not found!
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at startTimer (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:766:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-20T03:01:53.304Z - Error: You can update only if you are a member of this project!
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at updateProject (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:143:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-20T03:02:00.548Z - Error: GitHub repository not found or is private.
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at getGitHubActivity (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:1091:21)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-20T03:03:54.116Z - TypeError: Cannot read properties of undefined (reading 'map')
+    at file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:1112:36
+    at Array.map (<anonymous>)
+    at getGitHubActivity (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:1104:67)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-20T06:34:19.326Z - Error: You are not authenticated!
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at verifyToken (file:///D:/Projects/projects/Project-Management-App/server/middleware/verifyToken.js:6:50)
+    at Layer.handle [as handle_request] (D:\Projects\projects\Project-Management-App\server\node_modules\express\lib\router\layer.js:95:5)
+    at next (D:\Projects\projects\Project-Management-App\server\node_modules\express\lib\router\route.js:144:13)
+    at Route.dispatch (D:\Projects\projects\Project-Management-App\server\node_modules\express\lib\router\route.js:114:3)
+    at Layer.handle [as handle_request] (D:\Projects\projects\Project-Management-App\server\node_modules\express\lib\router\layer.js:95:5)
+    at D:\Projects\projects\Project-Management-App\server\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (D:\Projects\projects\Project-Management-App\server\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Projects\projects\Project-Management-App\server\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (D:\Projects\projects\Project-Management-App\server\node_modules\express\lib\router\index.js:175:3)
+2026-02-20T06:58:18.172Z - ValidationError: Teams validation failed: organizationId: Path `organizationId` is required.
+    at Document.invalidate (D:\Projects\projects\Project-Management-App\server\node_modules\mongoose\lib\document.js:3097:32)
+    at D:\Projects\projects\Project-Management-App\server\node_modules\mongoose\lib\document.js:2885:17
+    at D:\Projects\projects\Project-Management-App\server\node_modules\mongoose\lib\schematype.js:1349:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11)
+2026-02-20T07:06:13.717Z - Error: Please select an organization first
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at warpDriveProject (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:1130:48)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-20T07:08:09.315Z - Error: Please select an organization first
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at warpDriveProject (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:1130:48)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-20T07:08:11.462Z - Error: Please select an organization first
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at warpDriveProject (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:1130:48)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-20T07:09:53.297Z - ValidationError: Project validation failed: organizationId: Path `organizationId` is required.
+    at Document.invalidate (D:\Projects\projects\Project-Management-App\server\node_modules\mongoose\lib\document.js:3097:32)
+    at D:\Projects\projects\Project-Management-App\server\node_modules\mongoose\lib\document.js:2885:17
+    at D:\Projects\projects\Project-Management-App\server\node_modules\mongoose\lib\schematype.js:1349:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11)
+2026-02-20T09:53:10.272Z - Error: You are not authenticated!
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at verifyToken (file:///D:/Projects/projects/Project-Management-App/server/middleware/verifyToken.js:6:50)
+    at Layer.handle [as handle_request] (D:\Projects\projects\Project-Management-App\server\node_modules\express\lib\router\layer.js:95:5)
+    at next (D:\Projects\projects\Project-Management-App\server\node_modules\express\lib\router\route.js:144:13)
+    at Route.dispatch (D:\Projects\projects\Project-Management-App\server\node_modules\express\lib\router\route.js:114:3)
+    at Layer.handle [as handle_request] (D:\Projects\projects\Project-Management-App\server\node_modules\express\lib\router\layer.js:95:5)
+    at D:\Projects\projects\Project-Management-App\server\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (D:\Projects\projects\Project-Management-App\server\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Projects\projects\Project-Management-App\server\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (D:\Projects\projects\Project-Management-App\server\node_modules\express\lib\router\index.js:175:3)
+2026-02-23T01:12:23.165Z - Error [ERR_HTTP_HEADERS_SENT]: Cannot set headers after they are sent to the client
+    at ServerResponse.setHeader (node:_http_outgoing:699:11)
+    at ServerResponse.header (D:\Projects\projects\Project-Management-App\server\node_modules\express\lib\response.js:794:10)
+    at ServerResponse.send (D:\Projects\projects\Project-Management-App\server\node_modules\express\lib\response.js:174:12)
+    at ServerResponse.json (D:\Projects\projects\Project-Management-App\server\node_modules\express\lib\response.js:278:15)
+    at verifyInvitation (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:353:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-23T01:12:23.309Z - Error: You are not allowed to view this project!
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:116:23
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getProject (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:105:5)
+2026-02-23T01:12:39.548Z - Error: You are not allowed to view this project!
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:116:23
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getProject (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:105:5)
+2026-02-23T01:24:44.343Z - Error: You are not allowed to view this project!
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:119:23
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getProject (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:107:5)
+2026-02-23T01:24:51.496Z - Error: User is already a member of this project!
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at inviteProjectMember (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:269:29)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-25T14:50:50.894Z - Error: User already exists with this email can't do google auth
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at googleAuthSignIn (file:///D:/Projects/projects/Project-Management-App/server/controllers/auth.js:173:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-25T15:27:39.693Z - Error [ERR_HTTP_HEADERS_SENT]: Cannot set headers after they are sent to the client
+    at ServerResponse.setHeader (node:_http_outgoing:699:11)
+    at ServerResponse.header (D:\Projects\projects\Project-Management-App\server\node_modules\express\lib\response.js:794:10)
+    at ServerResponse.send (D:\Projects\projects\Project-Management-App\server\node_modules\express\lib\response.js:174:12)
+    at ServerResponse.json (D:\Projects\projects\Project-Management-App\server\node_modules\express\lib\response.js:278:15)
+    at verifyInvitation (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:365:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-25T15:36:00.269Z - Error: You are not allowed to add works to this project!
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at addWork (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:391:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-25T15:36:24.838Z - Error: You are not allowed to add works to this project!
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at addWork (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:391:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-25T15:37:33.972Z - ValidationError: Tasks validation failed: members.0: Cast to [ObjectId] failed for value "[\n' +
+  '  {\n' +
+  "    id: '699f0f094b89f1be0d153291',\n" +
+  "    img: 'https://robohash.org/4umzfd'\n" +
+  '  }\n' +
+  ']" (type string) at path "members.0" because of "CastError"
+    at Document.invalidate (D:\Projects\projects\Project-Management-App\server\node_modules\mongoose\lib\document.js:3097:32)
+    at model.$set (D:\Projects\projects\Project-Management-App\server\node_modules\mongoose\lib\document.js:1452:12)
+    at model.$set (D:\Projects\projects\Project-Management-App\server\node_modules\mongoose\lib\document.js:1135:16)
+    at model.Document (D:\Projects\projects\Project-Management-App\server\node_modules\mongoose\lib\document.js:166:12)
+    at model.Model (D:\Projects\projects\Project-Management-App\server\node_modules\mongoose\lib\model.js:121:12)
+    at new model (D:\Projects\projects\Project-Management-App\server\node_modules\mongoose\lib\model.js:5032:15)
+    at addWork (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:402:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-25T15:38:32.505Z - ValidationError: Tasks validation failed: members.0: Cast to [ObjectId] failed for value "[\n' +
+  '  {\n' +
+  "    id: '699f0f094b89f1be0d153291',\n" +
+  "    img: 'https://robohash.org/4umzfd'\n" +
+  '  }\n' +
+  ']" (type string) at path "members.0" because of "CastError"
+    at Document.invalidate (D:\Projects\projects\Project-Management-App\server\node_modules\mongoose\lib\document.js:3097:32)
+    at model.$set (D:\Projects\projects\Project-Management-App\server\node_modules\mongoose\lib\document.js:1452:12)
+    at model.$set (D:\Projects\projects\Project-Management-App\server\node_modules\mongoose\lib\document.js:1135:16)
+    at model.Document (D:\Projects\projects\Project-Management-App\server\node_modules\mongoose\lib\document.js:166:12)
+    at model.Model (D:\Projects\projects\Project-Management-App\server\node_modules\mongoose\lib\model.js:121:12)
+    at new model (D:\Projects\projects\Project-Management-App\server\node_modules\mongoose\lib\model.js:5032:15)
+    at addWork (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:402:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-25T15:39:47.716Z - Error: Only the creator or an admin can update this work status!
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at updateWorkStatus (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:558:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-25T16:19:53.849Z - Error: You can update only if you are a member of this project!
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at updateMembers (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:182:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-25T16:20:58.137Z - Error: Only assigned users or an admin can update this work status!
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at updateWorkStatus (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:560:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-25T16:21:04.971Z - Error: Only assigned users or an admin can update this work status!
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at updateWorkStatus (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:560:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-25T16:26:11.180Z - Error: You are not allowed to update this project!
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at updateProject (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:145:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-25T16:26:13.121Z - Error: You are not allowed to update this project!
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at updateProject (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:145:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-26T05:42:16.636Z - Error: Only assigned users or an admin can update this work status!
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at updateWorkStatus (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:578:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-02-26T05:42:27.579Z - Error: Only assigned users or an admin can update this work status!
+    at createError (file:///D:/Projects/projects/Project-Management-App/server/error.js:2:17)
+    at updateWorkStatus (file:///D:/Projects/projects/Project-Management-App/server/controllers/project.js:578:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)

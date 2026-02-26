@@ -1,9 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled, { keyframes, useTheme } from "styled-components";
 import { Avatar, IconButton, Chip, LinearProgress } from "@mui/material";
 import { MoreHoriz, CheckCircleOutline, DonutLarge, CalendarToday, Assignment, ArrowForward } from "@mui/icons-material";
-import { GalaxyButton } from "../components/CreativeComponents";
+import { GalaxyButton, PremiumLoader } from "../components/CreativeComponents";
 import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
+import { useDispatch, useSelector } from "react-redux";
+import { openSnackbar } from "../redux/snackbarSlice";
+import { userWorks, userTasks } from "../api";
 
 // --- Animations ---
 const fadeInUp = keyframes`
@@ -229,177 +232,189 @@ const TaskHeader = styled(TaskRow)`
   border-bottom: 2px solid ${({ theme }) => theme.soft + "30"};
 `;
 
-// --- Dummy Data ---
-
-const DUMMY_WORKS = [
-    {
-        id: 1,
-        title: "Redesign Landing Page",
-        date: "Dec 20 - Jan 15",
-        status: "In Progress",
-        members: [1, 2, 3],
-        progress: 65
-    },
-    {
-        id: 2,
-        title: "Mobile App API Integration",
-        date: "Jan 05 - Jan 25",
-        status: "In Progress",
-        members: [4, 5],
-        progress: 30
-    },
-    {
-        id: 3,
-        title: "Quarterly Report",
-        date: "Dec 01 - Dec 15",
-        status: "Completed",
-        members: [1],
-        progress: 100
-    },
-    {
-        id: 4,
-        title: "User Authentication Flow",
-        date: "Nov 20 - Dec 10",
-        status: "Completed",
-        members: [2, 3],
-        progress: 100
-    }
-];
-
-const DUMMY_TASKS = [
-    { id: 1, title: "Create Figma Mockups", date: "Jan 12", deadline: "Jan 14", status: "In Progress" },
-    { id: 2, title: "Setup Redux Store", date: "Jan 13", deadline: "Jan 16", status: "Pending" },
-    { id: 3, title: "API Endpoint Testing", date: "Jan 10", deadline: "Jan 11", status: "Completed" },
-];
-
 const WorksNew = () => {
-    const theme = useTheme();
+  const theme = useTheme();
+  const dispatch = useDispatch();
+  const { currentUser } = useSelector((state) => state.user);
+  const [loading, setLoading] = useState(true);
+  const [works, setWorks] = useState([]);
+  const [tasks, setTasks] = useState([]);
 
-    return (
-        <Container>
-            <Header>
-                <Title>My Works</Title>
-                <Subtitle>Manage your ongoing projects and personal tasks.</Subtitle>
-            </Header>
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem("token");
+        const worksRes = await userWorks(token);
+        const tasksRes = await userTasks(token);
 
-            <BentoGrid>
-                <BentoCard>
-                    <div>
-                        <StatLabel><DonutLarge sx={{ fontSize: 16 }} /> Total Works</StatLabel>
-                        <StatValue>12</StatValue>
+        setWorks(worksRes.data);
+        setTasks(tasksRes.data);
+        setLoading(false);
+      } catch (err) {
+        dispatch(openSnackbar({ message: err.response?.data?.message || err.message || "Failed to fetch data", type: "error" }));
+        setLoading(false);
+      }
+    };
+
+    if (currentUser) {
+      fetchData();
+    }
+  }, [currentUser, dispatch]);
+
+  const completedWorks = works.filter(w => w.status === "Completed");
+  const pendingWorks = works.filter(w => w.status === "Working" || w.status === "In Progress");
+  const pendingTasksCount = tasks.filter(t => t.status !== "Completed").length;
+
+  return (
+    <Container>
+      <Header>
+        <Title>My Works</Title>
+        <Subtitle>Manage your ongoing projects and personal tasks.</Subtitle>
+      </Header>
+
+      {loading ? (
+        <div style={{ display: "flex", justifyContent: "center", width: "100%", padding: "40px" }}>
+          <PremiumLoader />
+        </div>
+      ) : (
+        <>
+          <BentoGrid>
+            <BentoCard>
+              <div>
+                <StatLabel><DonutLarge sx={{ fontSize: 16 }} /> Total Works</StatLabel>
+                <StatValue>{works.length}</StatValue>
+              </div>
+              <LinearProgress variant="determinate" value={works.length > 0 ? (completedWorks.length / works.length) * 100 : 0} sx={{ borderRadius: 5, height: 6, backgroundColor: theme.soft }} />
+            </BentoCard>
+            <BentoCard>
+              <div>
+                <StatLabel><Assignment sx={{ fontSize: 16 }} /> Pending Tasks</StatLabel>
+                <StatValue>{pendingTasksCount}</StatValue>
+              </div>
+              <div style={{ fontSize: '12px', color: theme.textSoft }}>Keep it up!</div>
+            </BentoCard>
+            <BentoCard style={{ background: `linear-gradient(135deg, ${theme.primary} 0%, #6A38C2 100%)` }}>
+              <div>
+                <StatLabel style={{ color: 'rgba(255,255,255,0.8)' }}><CheckCircleOutline sx={{ fontSize: 16 }} /> Completed</StatLabel>
+                <StatValue style={{ color: 'white' }}>{completedWorks.length}</StatValue>
+              </div>
+              <GalaxyButton style={{ background: 'rgba(255,255,255,0.2)', width: 'fit-content', padding: '6px 16px', fontSize: '12px' }}>
+                View Archive <ArrowForward sx={{ fontSize: 14 }} />
+              </GalaxyButton>
+            </BentoCard>
+          </BentoGrid>
+
+          <WorksGrid>
+            <WorkColumn>
+              <SectionTitle><DonutLarge sx={{ color: '#3b82f6' }} /> In Progress</SectionTitle>
+              {pendingWorks.length === 0 ? (
+                <div style={{ color: theme.textSoft, padding: '20px' }}>No works in progress.</div>
+              ) : (
+                pendingWorks.map((work) => (
+                  <WorkCard key={work._id}>
+                    <WorkHeader>
+                      <div>
+                        <WorkTitle>{work.title}</WorkTitle>
+                        <WorkDate><CalendarToday sx={{ fontSize: 12 }} /> {new Date(work.createdAt).toLocaleDateString()}</WorkDate>
+                      </div>
+                      <IconButton size="small"><MoreHoriz /></IconButton>
+                    </WorkHeader>
+                    <div style={{ marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px', color: theme.textSoft }}>
+                        <span>Status</span>
+                        <span>Working</span>
+                      </div>
+                      <LinearProgress variant="determinate" value={60} sx={{ borderRadius: 4, height: 6, backgroundColor: theme.soft, '& .MuiLinearProgress-bar': { backgroundColor: '#3b82f6' } }} />
                     </div>
-                    <LinearProgress variant="determinate" value={75} sx={{ borderRadius: 5, height: 6, backgroundColor: theme.soft }} />
-                </BentoCard>
-                <BentoCard>
-                    <div>
-                        <StatLabel><Assignment sx={{ fontSize: 16 }} /> Pending Tasks</StatLabel>
-                        <StatValue>5</StatValue>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <MemberGroup>
+                        {work.members?.slice(0, 3).map((m) => (
+                          <Avatar key={m._id} src={m.img} sx={{ width: 28, height: 28, marginLeft: '-8px', border: `2px solid ${theme.bgLighter}` }}>
+                            {m.name[0]}
+                          </Avatar>
+                        ))}
+                      </MemberGroup>
+                      <Chip label="On Track" size="small" sx={{ height: 24, fontSize: 11, backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }} />
                     </div>
-                    <div style={{ fontSize: '12px', color: theme.textSoft }}>3 high priority</div>
-                </BentoCard>
-                <BentoCard style={{ background: `linear-gradient(135deg, ${theme.primary} 0%, #6A38C2 100%)` }}>
-                    <div>
-                        <StatLabel style={{ color: 'rgba(255,255,255,0.8)' }}><CheckCircleOutline sx={{ fontSize: 16 }} /> Completed</StatLabel>
-                        <StatValue style={{ color: 'white' }}>8</StatValue>
+                  </WorkCard>
+                ))
+              )}
+            </WorkColumn>
+
+            <WorkColumn>
+              <SectionTitle><CheckCircleOutline sx={{ color: '#10b981' }} /> Completed</SectionTitle>
+              {completedWorks.length === 0 ? (
+                <div style={{ color: theme.textSoft, padding: '20px' }}>No completed works yet.</div>
+              ) : (
+                completedWorks.map((work) => (
+                  <WorkCard key={work._id} style={{ opacity: 0.8 }}>
+                    <WorkHeader>
+                      <div>
+                        <WorkTitle>{work.title}</WorkTitle>
+                        <WorkDate><CalendarToday sx={{ fontSize: 12 }} /> {new Date(work.updatedAt).toLocaleDateString()}</WorkDate>
+                      </div>
+                      <IconButton size="small"><MoreHoriz /></IconButton>
+                    </WorkHeader>
+                    <div style={{ marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px', color: theme.textSoft }}>
+                        <span>Completed</span>
+                        <span>100%</span>
+                      </div>
+                      <LinearProgress variant="determinate" value={100} sx={{ borderRadius: 4, height: 6, backgroundColor: theme.soft, '& .MuiLinearProgress-bar': { backgroundColor: '#10b981' } }} />
                     </div>
-                    <GalaxyButton style={{ background: 'rgba(255,255,255,0.2)', width: 'fit-content', padding: '6px 16px', fontSize: '12px' }}>
-                        View Archive <ArrowForward sx={{ fontSize: 14 }} />
-                    </GalaxyButton>
-                </BentoCard>
-            </BentoGrid>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <MemberGroup>
+                        {work.members?.slice(0, 3).map((m) => (
+                          <Avatar key={m._id} src={m.img} sx={{ width: 28, height: 28, marginLeft: '-8px', border: `2px solid ${theme.bgLighter}` }}>
+                            {m.name[0]}
+                          </Avatar>
+                        ))}
+                      </MemberGroup>
+                      <Chip label="Done" size="small" sx={{ height: 24, fontSize: 11, backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }} />
+                    </div>
+                  </WorkCard>
+                ))
+              )}
+            </WorkColumn>
+          </WorksGrid>
 
-            <WorksGrid>
-                <WorkColumn>
-                    <SectionTitle><DonutLarge sx={{ color: '#3b82f6' }} /> In Progress</SectionTitle>
-                    {DUMMY_WORKS.filter(w => w.status === "In Progress").map(work => (
-                        <WorkCard key={work.id}>
-                            <WorkHeader>
-                                <div>
-                                    <WorkTitle>{work.title}</WorkTitle>
-                                    <WorkDate><CalendarToday sx={{ fontSize: 12 }} /> {work.date}</WorkDate>
-                                </div>
-                                <IconButton size="small"><MoreHoriz /></IconButton>
-                            </WorkHeader>
-                            <div style={{ marginBottom: '16px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px', color: theme.textSoft }}>
-                                    <span>Progress</span>
-                                    <span>{work.progress}%</span>
-                                </div>
-                                <LinearProgress variant="determinate" value={work.progress} sx={{ borderRadius: 4, height: 6, backgroundColor: theme.soft, '& .MuiLinearProgress-bar': { backgroundColor: '#3b82f6' } }} />
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <MemberGroup>
-                                    {work.members.map(m => (
-                                        <Avatar key={m} src={`https://i.pravatar.cc/150?u=${m}`} sx={{ width: 28, height: 28, marginLeft: '-8px', border: `2px solid ${theme.bgLighter}` }} />
-                                    ))}
-                                </MemberGroup>
-                                <Chip label="On Track" size="small" sx={{ height: 24, fontSize: 11, backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }} />
-                            </div>
-                        </WorkCard>
-                    ))}
-                </WorkColumn>
-
-                <WorkColumn>
-                    <SectionTitle><CheckCircleOutline sx={{ color: '#10b981' }} /> Completed</SectionTitle>
-                    {DUMMY_WORKS.filter(w => w.status === "Completed").map(work => (
-                        <WorkCard key={work.id} style={{ opacity: 0.8 }}>
-                            <WorkHeader>
-                                <div>
-                                    <WorkTitle>{work.title}</WorkTitle>
-                                    <WorkDate><CalendarToday sx={{ fontSize: 12 }} /> {work.date}</WorkDate>
-                                </div>
-                                <IconButton size="small"><MoreHoriz /></IconButton>
-                            </WorkHeader>
-                            <div style={{ marginBottom: '16px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px', color: theme.textSoft }}>
-                                    <span>Completed</span>
-                                    <span>100%</span>
-                                </div>
-                                <LinearProgress variant="determinate" value={100} sx={{ borderRadius: 4, height: 6, backgroundColor: theme.soft, '& .MuiLinearProgress-bar': { backgroundColor: '#10b981' } }} />
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <MemberGroup>
-                                    {work.members.map(m => (
-                                        <Avatar key={m} src={`https://i.pravatar.cc/150?u=${m}`} sx={{ width: 28, height: 28, marginLeft: '-8px', border: `2px solid ${theme.bgLighter}` }} />
-                                    ))}
-                                </MemberGroup>
-                                <Chip label="Done" size="small" sx={{ height: 24, fontSize: 11, backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }} />
-                            </div>
-                        </WorkCard>
-                    ))}
-                </WorkColumn>
-            </WorksGrid>
-
-            <SectionTitle>Your Tasks</SectionTitle>
-            <TaskSection>
-                <TaskHeader>
-                    <span>No</span>
-                    <span>Task Name</span>
-                    <span>Start Date</span>
-                    <span>Deadline</span>
-                    <span>Status</span>
-                </TaskHeader>
-                {DUMMY_TASKS.map((task, index) => (
-                    <TaskRow key={task.id}>
-                        <span>{index + 1}</span>
-                        <span style={{ fontWeight: 600 }}>{task.title}</span>
-                        <span>{task.date}</span>
-                        <span style={{ color: '#ef4444' }}>{task.deadline}</span>
-                        <Chip
-                            label={task.status}
-                            size="small"
-                            sx={{
-                                width: 'fit-content',
-                                fontSize: 11,
-                                backgroundColor: task.status === 'Completed' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                color: task.status === 'Completed' ? '#10b981' : '#ef4444'
-                            }}
-                        />
-                    </TaskRow>
-                ))}
-            </TaskSection>
-        </Container>
-    );
+          <SectionTitle>Your Tasks</SectionTitle>
+          <TaskSection>
+            <TaskHeader>
+              <span>No</span>
+              <span>Task Name</span>
+              <span>Start Date</span>
+              <span>Deadline</span>
+              <span>Status</span>
+            </TaskHeader>
+            {tasks.length === 0 ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: theme.textSoft }}>No tasks found.</div>
+            ) : (
+              tasks.map((task, index) => (
+                <TaskRow key={task._id}>
+                  <span>{index + 1}</span>
+                  <span style={{ fontWeight: 600 }}>{task.task}</span>
+                  <span>{new Date(task.createdAt).toLocaleDateString()}</span>
+                  <span style={{ color: '#ef4444' }}>{new Date(task.end_date).toLocaleDateString()}</span>
+                  <Chip
+                    label={task.status}
+                    size="small"
+                    sx={{
+                      width: 'fit-content',
+                      fontSize: 11,
+                      backgroundColor: task.status === 'Completed' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                      color: task.status === 'Completed' ? '#10b981' : '#ef4444'
+                    }}
+                  />
+                </TaskRow>
+              ))
+            )}
+          </TaskSection>
+        </>
+      )}
+    </Container>
+  );
 };
 
 export default WorksNew;

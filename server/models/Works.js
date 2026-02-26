@@ -41,6 +41,11 @@ const WorksSchema = new mongoose.Schema({
         type: [mongoose.Schema.Types.ObjectId],
         ref: "Tasks",
         default: [],
+    },
+    organizationId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Organization",
+        required: false
     }
 },
     { timestamps: true }

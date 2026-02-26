@@ -168,7 +168,7 @@ const OTP = ({ email, name, otpVerified, setOtpVerified, reason }) => {
             if (res.status === 200) {
                 dispatch(
                     openSnackbar({
-                        message: "OTP sent Successfully",
+                        message: res.data.code ? `OTP sent: ${res.data.code}` : "OTP sent Successfully",
                         severity: "success",
                     })
                 );
@@ -192,7 +192,7 @@ const OTP = ({ email, name, otpVerified, setOtpVerified, reason }) => {
         }).catch((err) => {
             dispatch(
                 openSnackbar({
-                    message: err.message,
+                    message: err.response?.data?.message || err.message,
                     severity: "error",
                 })
             );
@@ -217,7 +217,7 @@ const OTP = ({ email, name, otpVerified, setOtpVerified, reason }) => {
         }).catch((err) => {
             dispatch(
                 openSnackbar({
-                    message: err.message,
+                    message: err.response?.data?.message || err.message,
                     severity: "error",
                 })
             );

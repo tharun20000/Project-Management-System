@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import styled, { keyframes, useTheme, css } from "styled-components";
 import { useSelector, useDispatch } from "react-redux";
 import { Add, Search, FilterList, Sort } from "@mui/icons-material";
@@ -233,20 +234,20 @@ const StatusBadge = styled.span`
     padding: 4px 12px;
     border-radius: 20px;
     background: ${({ status }) => {
-        if (status === 'Completed') return 'rgba(76, 175, 80, 0.1)';
-        if (status === 'In Progress') return 'rgba(0, 194, 224, 0.1)';
-        return 'rgba(235, 90, 70, 0.1)';
-    }};
+    if (status === 'Completed') return 'rgba(76, 175, 80, 0.1)';
+    if (status === 'In Progress') return 'rgba(0, 194, 224, 0.1)';
+    return 'rgba(235, 90, 70, 0.1)';
+  }};
     color: ${({ status }) => {
-        if (status === 'Completed') return '#4caf50';
-        if (status === 'In Progress') return '#00C2E0';
-        return '#EB5A46';
-    }};
+    if (status === 'Completed') return '#4caf50';
+    if (status === 'In Progress') return '#00C2E0';
+    return '#EB5A46';
+  }};
     border: 1px solid ${({ status }) => {
-        if (status === 'Completed') return '#4caf50';
-        if (status === 'In Progress') return '#00C2E0';
-        return '#EB5A46';
-    }};
+    if (status === 'Completed') return '#4caf50';
+    if (status === 'In Progress') return '#00C2E0';
+    return '#EB5A46';
+  }};
     font-weight: 700;
     
     /* Pulse animation for active statuses */
@@ -254,144 +255,147 @@ const StatusBadge = styled.span`
 `;
 
 const ProjectsNew = ({ setNewProject }) => { // Accepting setNewProject prop to maintain compatibility
-    const dispatch = useDispatch();
-    const theme = useTheme();
-    const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState("All");
-    const [search, setSearch] = useState("");
-    const { currentUser } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                const token = localStorage.getItem("token");
-                const res = await getProjects(token);
-                setData(res.data);
-                setLoading(false);
-            } catch (err) {
-                dispatch(openSnackbar({ message: err.message, type: "error" }));
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, [currentUser, dispatch]);
+  const theme = useTheme();
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("All");
+  const [search, setSearch] = useState("");
+  const { currentUser } = useSelector((state) => state.user);
 
-    const getProgress = (status) => {
-        if (status === "Completed") return 100;
-        if (status === "In Progress") return 60;
-        return 30;
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem("token");
+        const res = await getProjects(token);
+        setData(res.data);
+        setLoading(false);
+      } catch (err) {
+        dispatch(openSnackbar({ message: err.response?.data?.message || err.message, type: "error" }));
+        setLoading(false);
+      }
     };
+    fetchData();
+  }, [currentUser, dispatch]);
 
-    const filteredData = Array.isArray(data) ? data.filter(project => {
-        if (!project) return false;
-        const matchesFilter = filter === "All" || project.status === filter;
-        const matchesSearch = project.title ? project.title.toLowerCase().includes(search.toLowerCase()) : false;
-        return matchesFilter && matchesSearch;
-    }) : [];
+  const getProgress = (status) => {
+    if (status === "Completed") return 100;
+    if (status === "In Progress") return 60;
+    return 30;
+  };
 
-    console.log("Projects Data:", data);
+  const filteredData = Array.isArray(data) ? data.filter(project => {
+    if (!project) return false;
+    const matchesFilter = filter === "All" || project.status === filter;
+    const matchesSearch = project.title ? project.title.toLowerCase().includes(search.toLowerCase()) : false;
+    return matchesFilter && matchesSearch;
+  }) : [];
 
-    return (
-        <Container>
-            <Header>
-                <Title>My Projects</Title>
-                <Controls>
-                    <SearchBar>
-                        <Search style={{ color: theme.textSoft }} />
-                        <input
-                            placeholder="Search projects..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+  console.log("Projects Data:", data);
+
+  return (
+    <Container>
+      <Header>
+        <Title>My Projects</Title>
+        <Controls>
+          <SearchBar>
+            <Search style={{ color: theme.textSoft }} />
+            <input
+              placeholder="Search projects..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </SearchBar>
+          <GalaxyButton onClick={() => setNewProject(true)} style={{ padding: '10px 20px', fontSize: '14px' }}>
+            <Add style={{ fontSize: "18px" }} /> New Project
+          </GalaxyButton>
+        </Controls>
+      </Header>
+
+      <Tabs>
+        {["All", "Working", "In Progress", "Completed"].map((tab) => (
+          <Tab
+            key={tab}
+            active={filter === tab}
+            onClick={() => setFilter(tab)}
+          >
+            {tab}
+          </Tab>
+        ))}
+      </Tabs>
+
+      {loading ? (
+        <div style={{ display: "flex", justifyContent: "center", width: "100%", padding: '40px' }}>
+          <PremiumLoader />
+        </div>
+      ) : (
+        <ResponsiveMasonry columnsCountBreakPoints={{ 350: 1, 750: 2, 900: 3 }}>
+          <Masonry gutter="24px">
+            {filteredData.map((project) => (
+              <Link to={`/projects/${project._id}`} key={project._id} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                <ProjectCardNew style={{ cursor: "pointer" }}>
+                  <ProjectHeader>
+                    <Tag color={theme.primary}>{project.tags?.[0] || "Development"}</Tag>
+                    <StatusBadge status={project.status}>{project.status}</StatusBadge>
+                  </ProjectHeader>
+
+                  <div>
+                    <ProjectTitle>{project.title}</ProjectTitle>
+                    <p style={{ fontSize: "14px", color: theme.textSoft, lineHeight: "1.6" }}>
+                      {project.desc?.length > 100 ? project.desc.slice(0, 100) + "..." : project.desc}
+                    </p>
+                  </div>
+
+                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: theme.textSoft }}>
+                      <span>Progress</span>
+                      <span>{getProgress(project.status)}%</span>
+                    </div>
+                    <PremiumProgress value={getProgress(project.status)} />
+                  </div>
+
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "10px", borderTop: `1px solid ${theme.soft}` }}>
+                    <MemberGroup>
+                      {project.members?.slice(0, 3).map((member) => (
+                        <Avatar
+                          key={member._id}
+                          src={member.img}
+                          sx={{ width: 32, height: 32, border: `2px solid ${theme.bgLighter}`, marginLeft: "-10px" }}
                         />
-                    </SearchBar>
-                    <GalaxyButton onClick={() => setNewProject(true)} style={{ padding: '10px 20px', fontSize: '14px' }}>
-                        <Add style={{ fontSize: "18px" }} /> New Project
-                    </GalaxyButton>
-                </Controls>
-            </Header>
-
-            <Tabs>
-                {["All", "Working", "In Progress", "Completed"].map((tab) => (
-                    <Tab
-                        key={tab}
-                        active={filter === tab}
-                        onClick={() => setFilter(tab)}
-                    >
-                        {tab}
-                    </Tab>
-                ))}
-            </Tabs>
-
-            {loading ? (
-                <div style={{ display: "flex", justifyContent: "center", width: "100%", padding: '40px' }}>
-                    <PremiumLoader />
-                </div>
-            ) : (
-                <ResponsiveMasonry columnsCountBreakPoints={{ 350: 1, 750: 2, 900: 3 }}>
-                    <Masonry gutter="24px">
-                        {filteredData.map((project) => (
-                            <ProjectCardNew key={project._id}>
-                                <ProjectHeader>
-                                    <Tag color={theme.primary}>{project.tags?.[0] || "Development"}</Tag>
-                                    <StatusBadge status={project.status}>{project.status}</StatusBadge>
-                                </ProjectHeader>
-
-                                <div>
-                                    <ProjectTitle>{project.title}</ProjectTitle>
-                                    <p style={{ fontSize: "14px", color: theme.textSoft, lineHeight: "1.6" }}>
-                                        {project.desc?.length > 100 ? project.desc.slice(0, 100) + "..." : project.desc}
-                                    </p>
-                                </div>
-
-                                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: theme.textSoft }}>
-                                        <span>Progress</span>
-                                        <span>{getProgress(project.status)}%</span>
-                                    </div>
-                                    <PremiumProgress value={getProgress(project.status)} />
-                                </div>
-
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "10px", borderTop: `1px solid ${theme.soft}` }}>
-                                    <MemberGroup>
-                                        {project.members?.slice(0, 3).map((member) => (
-                                            <Avatar
-                                                key={member._id}
-                                                src={member.img}
-                                                sx={{ width: 32, height: 32, border: `2px solid ${theme.bgLighter}`, marginLeft: "-10px" }}
-                                            />
-                                        ))}
-                                        {project.members?.length > 3 && (
-                                            <div
-                                                style={{
-                                                    width: "32px",
-                                                    height: "32px",
-                                                    borderRadius: "50%",
-                                                    background: theme.primary,
-                                                    color: "white",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    fontSize: "10px",
-                                                    border: `2px solid ${theme.bgLighter}`,
-                                                    marginLeft: "-10px",
-                                                    fontWeight: "bold",
-                                                }}
-                                            >
-                                                +{project.members.length - 3}
-                                            </div>
-                                        )}
-                                    </MemberGroup>
-                                    <span style={{ fontSize: '12px', color: theme.textSoft }}>{project.updatedAt ? format(project.updatedAt) : 'Recently'}</span>
-                                </div>
-                            </ProjectCardNew>
-                        ))}
-                    </Masonry>
-                </ResponsiveMasonry>
-            )}
-        </Container>
-    );
+                      ))}
+                      {project.members?.length > 3 && (
+                        <div
+                          style={{
+                            width: "32px",
+                            height: "32px",
+                            borderRadius: "50%",
+                            background: theme.primary,
+                            color: "white",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "10px",
+                            border: `2px solid ${theme.bgLighter}`,
+                            marginLeft: "-10px",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          +{project.members.length - 3}
+                        </div>
+                      )}
+                    </MemberGroup>
+                    <span style={{ fontSize: '12px', color: theme.textSoft }}>{project.updatedAt ? format(project.updatedAt) : 'Recently'}</span>
+                  </div>
+                </ProjectCardNew>
+              </Link>
+            ))}
+          </Masonry>
+        </ResponsiveMasonry>
+      )}
+    </Container>
+  );
 };
 
 export default ProjectsNew;

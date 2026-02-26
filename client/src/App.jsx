@@ -90,27 +90,15 @@ function App() {
                     {newProject && <AddNewProject setNewProject={setNewProject} />}
                     <Routes>
                       <Route >
-                        <Route exact path="/" element={<Dashboard setNewTeam={setNewTeam} setNewProject={setNewProject} />} />
-                        <Route path="/dashboard-premium" element={<DashboardNew />} />
-                        <Route path="/projects-premium" element={<ProjectsNew setNewProject={setNewProject} />} />
-                        <Route path="/community-premium" element={<CommunityNew />} />
-                        <Route path="/works-premium" element={<WorksNew />} />
-                        <Route path="projects" element={<Projects newProject={newProject} setNewProject={setNewProject} />} />
-                        <Route path="teams">
-                          <Route path=":id" element={<Teams />} />
-                        </Route>
-                        <Route path="team/invite">
-                          <Route path=":code" element={<TeamInvite />} />
-                        </Route>
-                        <Route path="projects">
-                          <Route path=":id" element={<ProjectDetails />} />
-                        </Route>
-                        <Route path="projects/invite">
-                          <Route path=":code" element={<ProjectInvite />} />
-                        </Route>
+                        <Route exact path="/" element={<DashboardNew setNewTeam={setNewTeam} setNewProject={setNewProject} />} />
+                        <Route path="projects/:id" element={<ProjectDetails />} />
+                        <Route path="projects" element={<ProjectsNew setNewProject={setNewProject} />} />
+                        <Route path="projects/invite/:code" element={<ProjectInvite />} />
+                        <Route path="teams/:id" element={<Teams />} />
+                        <Route path="team/invite/:code" element={<TeamInvite />} />
 
-                        <Route path="works" element={<Works />} />
-                        <Route path="community" element={<Community />} />
+                        <Route path="works" element={<WorksNew />} />
+                        <Route path="community" element={<CommunityNew />} />
                         <Route path="chats" element={<Chats />} />
                         <Route path="*" element={<div>Not Found</div>} />
                       </Route>

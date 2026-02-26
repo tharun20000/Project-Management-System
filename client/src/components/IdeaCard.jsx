@@ -29,14 +29,14 @@ const IcoButton = styled(IconButton)`
   color: ${({ theme }) => theme.textSoft + "99"} !important;
 `;
 
-const IdeaCard = ({ idea, no }) => {
+const IdeaCard = ({ idea, no, removeIdea }) => {
   return (
     <Container>
       <Text>
         <Span>{no + 1}) </Span>
         {idea}
       </Text>
-      <IcoButton>
+      <IcoButton onClick={() => removeIdea(no)}>
         <Delete sx={{ fontSize: "18px" }} />
       </IcoButton>
     </Container>

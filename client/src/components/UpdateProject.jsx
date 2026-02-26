@@ -323,7 +323,7 @@ const UpdateProject = ({ openUpdate, setOpenUpdate }) => {
     const [role, setRole] = useState("");
     const [access, setAccess] = useState("");
     const [selectedUsers, setSelectedUsers] = React.useState([]);
-    const [inputs, setInputs] = useState({ id: openUpdate.data._id, img: openUpdate.data.img, title: openUpdate.data.title, desc: openUpdate.data.desc, tags: openUpdate.data.tags, tools: openUpdate.data.tools, members: openUpdate.data.members, status: openUpdate.data.status });
+    const [inputs, setInputs] = useState({ id: openUpdate.data._id, img: openUpdate.data.img, title: openUpdate.data.title, desc: openUpdate.data.desc, tags: openUpdate.data.tags, tools: openUpdate.data.tools, members: openUpdate.data.members, status: openUpdate.data.status, githubRepo: openUpdate.data.githubRepo || "", meetingLink: openUpdate.data.meetingLink || "" });
 
     const token = localStorage.getItem("token");
     const handleSearch = async (e) => {
@@ -388,7 +388,6 @@ const UpdateProject = ({ openUpdate, setOpenUpdate }) => {
         { name: "", icon: "", link: "" },
         { name: "", icon: "", link: "" },
         { name: "", icon: "", link: "" },
-        { name: "", icon: "", link: "" },
     ]);
     //from the tools array in input fields find the name and check it with tools array and and at that index add the link for that tool
     useEffect(() => {
@@ -443,6 +442,7 @@ const UpdateProject = ({ openUpdate, setOpenUpdate }) => {
                         type: "success",
                     })
                 );
+                window.location.reload();
             })
             .catch((err) => {
                 console.log(err);
@@ -451,7 +451,7 @@ const UpdateProject = ({ openUpdate, setOpenUpdate }) => {
                 setBackDisabled(false);
                 dispatch(
                     openSnackbar({
-                        message: err.message,
+                        message: err.response?.data?.message || err.message,
                         type: "error",
                     })
                 );
@@ -487,6 +487,7 @@ const UpdateProject = ({ openUpdate, setOpenUpdate }) => {
                         type: "success",
                     })
                 );
+                window.location.reload();
             })
             .catch((err) => {
                 console.log(err);
@@ -495,7 +496,7 @@ const UpdateProject = ({ openUpdate, setOpenUpdate }) => {
                 setBackDisabled(false);
                 dispatch(
                     openSnackbar({
-                        message: err.message,
+                        message: err.response?.data?.message || err.message,
                         type: "error",
                     })
                 );
@@ -519,6 +520,7 @@ const UpdateProject = ({ openUpdate, setOpenUpdate }) => {
                         type: "success",
                     })
                 );
+                window.location.reload();
             })
             .catch((err) => {
                 console.log(err);
@@ -527,7 +529,7 @@ const UpdateProject = ({ openUpdate, setOpenUpdate }) => {
                 setBackDisabled(false);
                 dispatch(
                     openSnackbar({
-                        message: err.message,
+                        message: err.response?.data?.message || err.message,
                         type: "error",
                     })
                 );
@@ -582,6 +584,24 @@ const UpdateProject = ({ openUpdate, setOpenUpdate }) => {
                                     name="tags"
                                     rows={4}
                                     value={inputs.tags}
+                                    onChange={handleChange}
+                                />
+                            </OutlinedBox>
+                            <OutlinedBox style={{ marginTop: "6px" }}>
+                                <TextInput
+                                    placeholder="GitHub Repository URL (Optional) e.g. facebook/react"
+                                    type="text"
+                                    name="githubRepo"
+                                    value={inputs.githubRepo}
+                                    onChange={handleChange}
+                                />
+                            </OutlinedBox>
+                            <OutlinedBox style={{ marginTop: "6px" }}>
+                                <TextInput
+                                    placeholder="Zoom / Meeting Link (Optional)"
+                                    type="text"
+                                    name="meetingLink"
+                                    value={inputs.meetingLink}
                                     onChange={handleChange}
                                 />
                             </OutlinedBox>

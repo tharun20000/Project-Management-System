@@ -181,7 +181,7 @@ const Community = () => {
         setLoading(false);
       })
       .catch((err) => {
-        dispatch(openSnackbar({ message: err.message, type: "error" }));
+        dispatch(openSnackbar({ message: err.response?.data?.message || err.message, type: "error" }));
         setLoading(false);
       });
   };
@@ -213,7 +213,7 @@ const Community = () => {
         dispatch(openSnackbar({ message: "Post created successfully", type: "success" }));
       })
       .catch((err) => {
-        dispatch(openSnackbar({ message: err.message, type: "error" }));
+        dispatch(openSnackbar({ message: err.response?.data?.message || err.message, type: "error" }));
       });
     setCreateLoading(false);
   };
@@ -247,7 +247,7 @@ const Community = () => {
         dispatch(openSnackbar({ message: "Post deleted", type: "success" }));
       })
       .catch((err) => {
-        dispatch(openSnackbar({ message: err.message, type: "error" }));
+        dispatch(openSnackbar({ message: err.response?.data?.message || err.message, type: "error" }));
       });
   };
 

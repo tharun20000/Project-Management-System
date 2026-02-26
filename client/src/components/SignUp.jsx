@@ -15,12 +15,13 @@ import { IconButton, Modal } from "@mui/material";
 import { loginFailure, loginStart, loginSuccess } from "../redux/userSlice";
 import { openSnackbar } from "../redux/snackbarSlice";
 import { useDispatch } from "react-redux";
-import axios from "axios";
+
 import CircularProgress from "@mui/material/CircularProgress";
 import validator from "validator";
 import { googleSignIn, signUp } from "../api/index";
 import OTP from "./OTP";
-import { useGoogleLogin } from "@react-oauth/google";
+import { signInWithPopup } from 'firebase/auth';
+import { auth, provider } from '../firebase';
 
 const Container = styled.div`
   width: 100%;
@@ -189,7 +190,7 @@ const SignUp = ({ setSignUpOpen, setSignInOpen }) => {
         setDisabled(false);
         dispatch(
           openSnackbar({
-            message: err.message,
+            message: err.response?.data?.message || err.message,
             severity: "error",
           })
         );
@@ -290,62 +291,51 @@ const SignUp = ({ setSignUpOpen, setSignInOpen }) => {
   };
 
   //Google SignIn
-  const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      setLoading(true);
-      const user = await axios.get(
-        'https://www.googleapis.com/oauth2/v3/userinfo',
-        { headers: { Authorization: `Bearer ${tokenResponse.access_token}` } },
-      ).catch((err) => {
-        dispatch(loginFailure());
+  //Google SignIn
+  //Google SignIn
+  const googleLogin = async () => {
+    setLoading(true);
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      const res = await googleSignIn({
+        name: user.displayName,
+        email: user.email,
+        img: user.photoURL,
+      });
+
+      console.log(res);
+      if (res.status === 200) {
+        dispatch(loginSuccess(res.data));
+        setSignUpOpen(false);
         dispatch(
           openSnackbar({
-            message: err.message,
+            message: "Logged In Successfully",
+            severity: "success",
+          })
+        );
+      } else {
+        dispatch(loginFailure(res.data));
+        dispatch(
+          openSnackbar({
+            message: res.data.message,
             severity: "error",
           })
         );
-      });
-
-      googleSignIn({
-        name: user.data.name,
-        email: user.data.email,
-        img: user.data.picture,
-      }).then((res) => {
-        console.log(res);
-        if (res.status === 200) {
-          dispatch(loginSuccess(res.data));
-          setSignUpOpen(false);
-          dispatch(
-            openSnackbar({
-              message: "Logged In Successfully",
-              severity: "success",
-            })
-          );
-
-          setLoading(false);
-        } else {
-          dispatch(loginFailure(res.data));
-          dispatch(
-            openSnackbar({
-              message: res.data.message,
-              severity: "error",
-            })
-          );
-          setLoading(false);
-        }
-      });
-    },
-    onError: errorResponse => {
+      }
+    } catch (error) {
       dispatch(loginFailure());
       dispatch(
         openSnackbar({
-          message: errorResponse.error,
+          message: error.message || "An error occurred during Google Sign-In",
           severity: "error",
         })
       );
+    } finally {
       setLoading(false);
-    },
-  });
+    }
+  };
 
 
   const theme = useTheme();
@@ -375,7 +365,7 @@ const SignUp = ({ setSignUpOpen, setSignInOpen }) => {
                   <CircularProgress color="inherit" size={20} />
                 ) : (
                   <>
-                    <GoogleIcon src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/1000px-Google_%22G%22_Logo.svg.png?20210618182606" />
+                    <GoogleIcon src={Google} />
                     Sign In with Google</>
                 )}
               </OutlinedBox>

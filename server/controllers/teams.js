@@ -7,6 +7,8 @@ import nodemailer from "nodemailer";
 import dotenv from 'dotenv';
 import Teams from "../models/Teams.js";
 import Project from "../models/Project.js";
+import Organization from "../models/Organization.js";
+import Notifications from "../models/Notifications.js";
 import otpGenerator from 'otp-generator';
 import { logoSVG } from "../utils/logo.js";
 
@@ -18,11 +20,24 @@ export const addTeam = async (req, res, next) => {
         return next(createError(404, "User not found"));
     }
 
-    const newTeams = new Teams({ members: [{ id: user.id, role: "d", access: "Owner" }], ...req.body });
+    // if (!user.currentOrganization) {
+    //     return next(createError(400, "Please select an organization first"));
+    // }
+
+    const newTeams = new Teams({
+        members: [{ id: user.id, role: "d", access: "Owner" }],
+        organizationId: user.currentOrganization,
+        ...req.body
+    });
     try {
         const saveTeams = (await newTeams.save())
 
         await User.findByIdAndUpdate(user.id, { $push: { teams: saveTeams._id } }, { new: true });
+        // Also push to Organization
+        if (user.currentOrganization) {
+            await Organization.findByIdAndUpdate(user.currentOrganization, { $push: { teams: saveTeams._id } });
+        }
+
         res.status(200).json(saveTeams);
     } catch (err) {
         next(err);
@@ -191,11 +206,24 @@ export const addTeamProject = async (req, res, next) => {
         return next(createError(404, "User not found"));
     }
 
-    const newProject = new Project({ members: [{ id: user.id, role: "d", access: "Owner" }], ...req.body });
+    // if (!user.currentOrganization) {
+    //     return next(createError(400, "Please select an organization first"));
+    // }
+
+    const newProject = new Project({
+        members: [{ id: user.id, role: "d", access: "Owner" }],
+        organizationId: user.currentOrganization,
+        ...req.body
+    });
     try {
-        const saveProject = await (await newProject.save());
+        const saveProject = await newProject.save(); // Removed redundant await await
         await User.findByIdAndUpdate(user.id, { $push: { projects: saveProject._id } }, { new: true });
         await Teams.findByIdAndUpdate(req.params.id, { $push: { projects: saveProject._id } }, { new: true });
+        // Also push to Organization
+        if (user.currentOrganization) {
+            await Organization.findByIdAndUpdate(user.currentOrganization, { $push: { projects: saveProject._id } });
+        }
+
         res.status(200).json(saveProject);
     } catch (err) {
         next(err);
@@ -273,6 +301,15 @@ export const inviteTeamMember = async (req, res, next) => {
                     subject: `Invitation to join team ${team.name}`,
                     html: mailBody
                 };
+
+                const newNotification = new Notifications({
+                    link: team._id,
+                    type: "team",
+                    message: `"${user.name}" invited you to join the team "${team.name}". Please check your email for the invitation link.`,
+                });
+                const savedNote = await newNotification.save();
+                await User.findByIdAndUpdate(req.body.id, { $push: { notifications: savedNote._id } });
+
                 transporter.sendMail(mailOptions, (err, data) => {
                     if (err) {
                         return next(err);
@@ -344,3 +381,68 @@ export const getTeamMembers = async (req, res, next) => {
         next(err);
     }
 }
+
+export const addPoll = async (req, res, next) => {
+    try {
+        const team = await Teams.findById(req.params.id);
+        if (!team) return next(createError(404, "Team not found!"));
+
+        // Check membership
+        const isMember = team.members.some(m => m.id.toString() === req.user.id);
+        if (!isMember) return next(createError(403, "You are not a member of this team!"));
+
+        const newPoll = {
+            question: req.body.question,
+            options: req.body.options.map(opt => ({ text: opt, votes: [] })),
+        };
+
+        const updatedTeam = await Teams.findByIdAndUpdate(
+            req.params.id,
+            { $push: { polls: newPoll } },
+            { new: true }
+        ).populate("members.id", "_id name email img");
+
+        res.status(200).json(updatedTeam);
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const votePoll = async (req, res, next) => {
+    try {
+        const { pollId, optionIndex } = req.body;
+        const userId = req.user.id;
+        const teamId = req.params.id;
+
+        const team = await Teams.findById(teamId);
+        if (!team) return next(createError(404, "Team not found!"));
+
+        // Check membership
+        const isMember = team.members.some(m => m.id.toString() === userId);
+        if (!isMember) return next(createError(403, "You are not a member of this team!"));
+
+        const poll = team.polls.id(pollId);
+        if (!poll) return next(createError(404, "Poll not found!"));
+
+        // Remove user vote from all options in this poll
+        poll.options.forEach(opt => {
+            opt.votes = opt.votes.filter(v => v.toString() !== userId);
+        });
+
+        // Add user vote to the selected option
+        if (poll.options[optionIndex]) {
+            poll.options[optionIndex].votes.push(userId);
+        } else {
+            return next(createError(400, "Invalid option index"));
+        }
+
+        await team.save();
+
+        // Return updated team (or just the poll if optimized, but team is safer for consistency)
+        const updatedTeam = await Teams.findById(teamId).populate("members.id", "_id name email img");
+        res.status(200).json(updatedTeam);
+
+    } catch (err) {
+        next(err);
+    }
+};

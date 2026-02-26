@@ -80,8 +80,8 @@ const NotificationDialog = ({
       <Wrapper>
         <Heading>Notifications</Heading>
 
-        {notification.map((item) => (
-          <Item>
+        {notification.map((item, index) => (
+          <Item key={item._id || index}>
             <Avatar
               sx={{ width: "32px", height: "32px" }}
               src={currentUser.img}

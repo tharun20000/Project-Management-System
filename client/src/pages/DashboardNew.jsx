@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import styled, { useTheme, keyframes, css } from "styled-components";
 import { useSelector, useDispatch } from "react-redux";
 import { Add, TrendingUp, Assignment, Group, AccessTime, ArrowForward } from "@mui/icons-material";
@@ -8,6 +9,7 @@ import { openSnackbar } from "../redux/snackbarSlice";
 import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 import { format } from "timeago.js";
 import { MagicCard, MagicCardContent, GalaxyButton, PremiumLoader, PremiumProgress } from "../components/CreativeComponents";
+import WorkloadDashboard from "../components/WorkloadDashboard";
 
 // --- Animations ---
 const fadeInUp = keyframes`
@@ -278,12 +280,14 @@ const MemberGroup = styled.div`
   }
 `;
 
-const DashboardNew = () => {
+const DashboardNew = ({ setNewProject, setNewTeam }) => {
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState({ projects: [], tasks: [] });
     const { currentUser } = useSelector((state) => state.user);
     const theme = useTheme();
     const dispatch = useDispatch();
+
+
 
     useEffect(() => {
         const fetchData = async () => {
@@ -295,7 +299,7 @@ const DashboardNew = () => {
                 setData({ projects: projectsRes.data, tasks: tasksRes.data });
                 setLoading(false);
             } catch (err) {
-                dispatch(openSnackbar({ message: err.message, type: "error" }));
+                dispatch(openSnackbar({ message: err.response?.data?.message || err.message, type: "error" }));
                 setLoading(false);
             }
         };
@@ -303,9 +307,9 @@ const DashboardNew = () => {
     }, [currentUser, dispatch]);
 
     const totalProjects = data.projects.length;
-    const completedProjects = data.projects.filter((p) => p.status === "Completed").length;
     const totalTasks = data.tasks.length;
-    const pendingTasks = data.tasks.filter((t) => t.status !== "Completed").length;
+    const completedTasks = data.tasks.filter((t) => t.status === "Completed" || t.status === "Done").length;
+    const pendingTasks = data.tasks.filter((t) => t.status !== "Completed" && t.status !== "Done").length;
 
     // Helper for visual progress bar
     const getProgress = (status) => {
@@ -338,7 +342,6 @@ const DashboardNew = () => {
                         </CardHeader>
                         <div>
                             <StatValue>{totalProjects}</StatValue>
-                            <SubText style={{ fontSize: '12px', marginTop: '4px' }}>+2 this week</SubText>
                         </div>
                     </MagicCardContent>
                 </MagicCard>
@@ -351,7 +354,7 @@ const DashboardNew = () => {
                             <StatLabel>Completed</StatLabel>
                         </CardHeader>
                         <div>
-                            <StatValue>{completedProjects}</StatValue>
+                            <StatValue>{completedTasks}</StatValue>
                             <SubText style={{ fontSize: '12px', marginTop: '4px' }}>Great progress!</SubText>
                         </div>
                     </MagicCardContent>
@@ -386,12 +389,14 @@ const DashboardNew = () => {
                 </MagicCard>
             </StatsGrid>
 
+            <WorkloadDashboard />
+
             <Actions>
-                <GalaxyButton onClick={() => dispatch(openSnackbar({ message: "Opening Project Creator...", type: "success" }))}>
+                <GalaxyButton onClick={() => setNewProject(true)}>
                     <Add style={{ fontSize: "22px" }} />
                     Start New Project
                 </GalaxyButton>
-                <GalaxyButton style={{ background: 'linear-gradient(90deg, #FFC107, #FF9800)' }} onClick={() => dispatch(openSnackbar({ message: "Team Builder coming soon!", type: "info" }))}>
+                <GalaxyButton style={{ background: 'linear-gradient(90deg, #FFC107, #FF9800)' }} onClick={() => setNewTeam(true)}>
                     <Add style={{ fontSize: "22px" }} />
                     Build Team
                 </GalaxyButton>
@@ -412,63 +417,65 @@ const DashboardNew = () => {
                 <ResponsiveMasonry columnsCountBreakPoints={{ 350: 1, 750: 2, 900: 3 }}>
                     <Masonry gutter="24px">
                         {data.projects.map((project) => (
-                            <ProjectCardNew key={project._id}>
-                                <ProjectHeader>
-                                    <Tag color={theme.primary}>{project.tags?.[0] || "Development"}</Tag>
-                                    <span style={{ fontSize: "12px", color: theme.textSoft, fontWeight: 500 }}>
-                                        {format(project.updatedAt)}
-                                    </span>
-                                </ProjectHeader>
+                            <Link to={`/projects/${project._id}`} key={project._id} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                                <ProjectCardNew style={{ cursor: "pointer" }}>
+                                    <ProjectHeader>
+                                        <Tag color={theme.primary}>{project.tags?.[0] || "Development"}</Tag>
+                                        <span style={{ fontSize: "12px", color: theme.textSoft, fontWeight: 500 }}>
+                                            {format(project.updatedAt)}
+                                        </span>
+                                    </ProjectHeader>
 
-                                <div>
-                                    <ProjectTitle>{project.title}</ProjectTitle>
-                                    <p style={{ fontSize: "14px", color: theme.textSoft, lineHeight: "1.6" }}>
-                                        {project.desc?.length > 80 ? project.desc.slice(0, 80) + "..." : project.desc}
-                                    </p>
-                                </div>
-
-                                {/* Visual Progress Bar */}
-                                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: theme.textSoft }}>
-                                        <span>Progress</span>
-                                        <span>{getProgress(project.status)}%</span>
+                                    <div>
+                                        <ProjectTitle>{project.title}</ProjectTitle>
+                                        <p style={{ fontSize: "14px", color: theme.textSoft, lineHeight: "1.6" }}>
+                                            {project.desc?.length > 80 ? project.desc.slice(0, 80) + "..." : project.desc}
+                                        </p>
                                     </div>
-                                    <PremiumProgress value={getProgress(project.status)} />
-                                </div>
 
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "10px", borderTop: `1px solid ${theme.soft}` }}>
-                                    <MemberGroup>
-                                        {project.members?.slice(0, 3).map((member) => (
-                                            <Avatar
-                                                key={member._id}
-                                                src={member.img}
-                                                sx={{ width: 32, height: 32, border: `2px solid ${theme.bgLighter}`, marginLeft: "-10px" }}
-                                            />
-                                        ))}
-                                        {project.members?.length > 3 && (
-                                            <div
-                                                style={{
-                                                    width: "32px",
-                                                    height: "32px",
-                                                    borderRadius: "50%",
-                                                    background: theme.primary,
-                                                    color: "white",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    fontSize: "10px",
-                                                    border: `2px solid ${theme.bgLighter}`,
-                                                    marginLeft: "-10px",
-                                                    fontWeight: "bold",
-                                                }}
-                                            >
-                                                +{project.members.length - 3}
-                                            </div>
-                                        )}
-                                    </MemberGroup>
-                                    <span style={{ fontSize: '12px', color: theme.textSoft }}>Due shortly</span>
-                                </div>
-                            </ProjectCardNew>
+                                    {/* Visual Progress Bar */}
+                                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: theme.textSoft }}>
+                                            <span>Progress</span>
+                                            <span>{getProgress(project.status)}%</span>
+                                        </div>
+                                        <PremiumProgress value={getProgress(project.status)} />
+                                    </div>
+
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "10px", borderTop: `1px solid ${theme.soft}` }}>
+                                        <MemberGroup>
+                                            {project.members?.slice(0, 3).map((member) => (
+                                                <Avatar
+                                                    key={member.id?._id}
+                                                    src={member.id?.img}
+                                                    sx={{ width: 32, height: 32, border: `2px solid ${theme.bgLighter}`, marginLeft: "-10px" }}
+                                                />
+                                            ))}
+                                            {project.members?.length > 3 && (
+                                                <div
+                                                    style={{
+                                                        width: "32px",
+                                                        height: "32px",
+                                                        borderRadius: "50%",
+                                                        background: theme.primary,
+                                                        color: "white",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        fontSize: "10px",
+                                                        border: `2px solid ${theme.bgLighter}`,
+                                                        marginLeft: "-10px",
+                                                        fontWeight: "bold",
+                                                    }}
+                                                >
+                                                    +{project.members.length - 3}
+                                                </div>
+                                            )}
+                                        </MemberGroup>
+                                        <span style={{ fontSize: '12px', color: theme.textSoft }}>Due shortly</span>
+                                    </div>
+                                </ProjectCardNew>
+                            </Link>
                         ))}
                     </Masonry>
                 </ResponsiveMasonry>

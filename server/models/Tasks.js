@@ -17,6 +17,19 @@ const TasksSchema = new mongoose.Schema({
         default: [],
     },
     status: { type: String, default: "Working" },
+    time_tracked: { type: Number, default: 0 },
+    active_session: {
+        start_time: { type: Date, default: null },
+        is_active: { type: Boolean, default: false }
+    },
+    impact_risk: { type: String, enum: ["Low", "Medium", "High", "Unknown"], default: "Unknown" },
+    impact_modules: { type: [String], default: [] },
+    impact_notes: { type: String, default: "Impact analysis pending..." },
+    organizationId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Organization",
+        required: false
+    }
 },
     { timestamps: true }
 );

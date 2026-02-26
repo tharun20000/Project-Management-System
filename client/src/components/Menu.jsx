@@ -140,7 +140,7 @@ const Menu = ({ darkMode, setDarkMode, setMenuOpen, setNewTeam }) => {
         setTeamsLoading(false);
       })
       .catch((err) => {
-        dispatch(openSnackbar({ message: err.message, type: "error" }));
+        dispatch(openSnackbar({ message: err.response?.data?.message || err.message, type: "error" }));
         if (err.response.status === 401 || err.response.status === 402) logoutUser();
       });
   };

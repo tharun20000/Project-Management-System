@@ -135,10 +135,6 @@ const tools = [
         icon: AdobeXdIcon,
     },
     {
-        name: "Github",
-        icon: "https://cdn.worldvectorlogo.com/logos/github-icon.svg",
-    },
-    {
         name: "GitLab",
         icon: "https://cdn-icons-png.flaticon.com/512/5968/5968853.png",
     },

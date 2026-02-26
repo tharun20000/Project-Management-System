@@ -3,6 +3,8 @@ import User from "../models/User.js";
 import Project from "../models/Project.js";
 import Teams from "../models/Teams.js";
 import Notifications from "../models/Notifications.js";
+import Works from "../models/Works.js";
+import Tasks from "../models/Tasks.js";
 
 export const update = async (req, res, next) => {
   if (req.params.id === req.user.id) {
@@ -26,8 +28,74 @@ export const update = async (req, res, next) => {
 export const deleteUser = async (req, res, next) => {
   if (req.params.id === req.user.id) {
     try {
-      await User.findByIdAndDelete(req.params.id);
-      res.status(200).json("User has been deleted.");
+      const userId = req.user.id;
+
+      // 1. PROJECTS CLEANUP
+      // Find all projects where user is a member
+      const projects = await Project.find({ "members.id": userId });
+
+      for (const project of projects) {
+        const memberInfo = project.members.find(m => m.id.toString() === userId);
+
+        if (memberInfo && memberInfo.access === "Owner") {
+          // USER IS OWNER: Delete the entire project and its contents
+
+          // Get all Works in this project
+          const works = await Works.find({ projectId: project._id });
+          const workIds = works.map(w => w._id);
+
+          // Get all Tasks in this project
+          const tasks = await Tasks.find({ projectId: project._id });
+          const taskIds = tasks.map(t => t._id); // Tasks in this project
+
+          // Cleanup references in ALL users (e.g., removing these tasks/works from their lists)
+          await User.updateMany(
+            {},
+            {
+              $pull: {
+                projects: project._id,
+                works: { $in: workIds },
+                tasks: { $in: taskIds }
+              }
+            }
+          );
+
+          // Delete actual documents
+          await Tasks.deleteMany({ projectId: project._id });
+          await Works.deleteMany({ projectId: project._id });
+          await Project.findByIdAndDelete(project._id);
+
+        } else {
+          // USER IS JUST A MEMBER: Remove them from the project
+          await Project.findByIdAndUpdate(project._id, {
+            $pull: { members: { id: userId } }
+          });
+        }
+      }
+
+      // 2. TEAMS CLEANUP
+      const teams = await Teams.find({ "members.id": userId });
+      for (const team of teams) {
+        // Assuming Teams logic similar to Projects or just remove member
+        // If specific Owner logic exists for teams, it should be here. 
+        // For now, we remove the member. If they are the only one, maybe delete team?
+        // Let's safe-fail to removing member.
+        await Teams.findByIdAndUpdate(team._id, {
+          $pull: { members: { id: userId } }
+        });
+      }
+
+      // 3. TASKS CLEANUP (Assigned tasks in other projects)
+      // Remove user from 'members' array of any Tasks they are assigned to
+      await Tasks.updateMany(
+        { members: userId },
+        { $pull: { members: userId } }
+      );
+
+      // 4. DELETE USER
+      await User.findByIdAndDelete(userId);
+
+      res.status(200).json("User and all associated data have been deleted.");
     } catch (err) {
       next(err);
     }
@@ -216,20 +284,26 @@ export const getUserTeams = async (req, res, next) => {
 }
 
 //find user from email and send it to client
+//find user by email or name
 export const findUserByEmail = async (req, res, next) => {
-  const email = req.params.email;
-  const users = [];
+  const query = req.params.email;
+  // Escape regex special characters to prevent crashes
+  const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
   try {
-    await User.findOne({ email: { $regex: email, $options: "i" } }).then((user) => {
-      if (user != null) {
-        users.push(user);
-        res.status(200).json(users);
-      } else {
-        res.status(404).json({ message: "No user found" });
-      }
-    }).catch((err) => {
-      next(err)
-    })
+    const users = await User.find({
+      $and: [
+        { _id: { $ne: req.user.id } },
+        {
+          $or: [
+            { email: { $regex: safeQuery, $options: "i" } },
+            { name: { $regex: safeQuery, $options: "i" } }
+          ]
+        }
+      ]
+    }).select("name email img").limit(10);
+
+    res.status(200).json(users);
   } catch (err) {
     next(err);
   }

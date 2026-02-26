@@ -1,26 +1,18 @@
-import React, { useEffect } from "react";
-import { Fragment, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import {
-  ImportantDevices,
   MoreVert,
   TimelapseRounded,
   StarsRounded
 } from "@mui/icons-material";
-import LinearProgress, {
-  linearProgressClasses,
-} from "@mui/material/LinearProgress";
+import LinearProgress from "@mui/material/LinearProgress";
 import { format } from "timeago.js";
-import { useDrag, useDrop } from "react-dnd";
-import ITEM_TYPE from "../data/types";
+import { useDrag } from "react-dnd";
 import { tagColors } from "../data/data";
-import { Link } from "react-router-dom";
-import { color } from "@mui/system";
 import { Avatar, IconButton, Menu, MenuItem } from "@mui/material";
-import { updateWorkStatus } from "../api/index";
+import { updateWorkStatus, deleteWork } from "../api/index";
 import { useDispatch } from "react-redux";
 import { openSnackbar } from "../redux/snackbarSlice";
-import WorkDetails from "./WorkDetails";
 
 const Container = styled.div`
   padding: 14px;
@@ -139,14 +131,24 @@ const IcoBtn = styled(IconButton)`
   color: ${({ theme }) => theme.textSoft} !important;
 `;
 
-const Card = ({ status, work }) => {
-  const [color, setColor] = useState("primary");
-  const [task, setTask] = useState(work.tasks);
-  const [tag, setTag] = useState(work.tags);
+const Card = ({ status, work, deleteWorkLocal, stageColor }) => {
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: "WORK_CARD",
+    item: { id: work._id },
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  }));
+
+  const [task, setTask] = useState(work.tasks || []);
+  const [tag, setTag] = useState(work.tags || []);
   const [completed, setCompleted] = useState(0);
   const [progress, setProgress] = useState(0);
   const [members, setMembers] = useState([]);
-  const [openWork, setOpenWork] = useState(false);
+
+  useEffect(() => {
+    setTask(work.tasks || []);
+  }, [work]);
   const [anchorEl, setAnchorEl] = useState(null);
   const openMenu = Boolean(anchorEl);
   const token = localStorage.getItem("token");
@@ -162,59 +164,50 @@ const Card = ({ status, work }) => {
     setAnchorEl(null);
   };
 
-  const handleStatusUpdate = async (newStatus) => {
+  const handleDelete = async () => {
     handleMenuClose();
-    await updateWorkStatus(work._id, newStatus, token)
+    await deleteWork(work._id, token)
       .then((res) => {
-        dispatch(openSnackbar({ message: "Work status updated", severity: "success" }));
-        // Refreshing local state
-        work.status = newStatus;
-        if (newStatus === "Completed") setColor("success");
-        else setColor("primary");
+        dispatch(openSnackbar({ message: "Task deleted successfully", severity: "success" }));
+        if (deleteWorkLocal) deleteWorkLocal(work._id);
       })
       .catch((err) => {
-        dispatch(openSnackbar({ message: err.response?.data?.message || "Error updating status", severity: "error" }));
+        dispatch(openSnackbar({ message: err.response?.data?.message || "Error deleting task", severity: "error" }));
       });
   };
-
-
-  useEffect(() => {
-    if (status === "Completed") {
-      setColor("success");
-    }
-  }, [status]);
 
   //check the no of tasks completed in the work and set the progress
   useEffect(() => {
     let count = 0;
     let Members = [];
-    task.forEach((item) => {
-      if (item.status === "Completed") {
-        count++;
-      }
-      console.log(item);
-      if (item.members.length > 0) {
-        item.members.forEach((items) => {
-          let isPresent = Members.some((member) => member._id === items._id);
-          if (!isPresent) {
-            Members.push(items);
-          }
-        });
-      }
-    });
+    if (Array.isArray(task)) {
+      task.forEach((item) => {
+        if (item.status === "Completed") {
+          count++;
+        }
+        if (item.members && Array.isArray(item.members) && item.members.length > 0) {
+          item.members.forEach((items) => {
+            if (items) {
+              let isPresent = Members.some((member) => member._id === items._id);
+              if (!isPresent) {
+                Members.push(items);
+              }
+            }
+          });
+        }
+      });
+    }
     setCompleted(count);
     setProgress(completed);
     setMembers(Members);
   }, [task]);
 
-  //get the members of the work from all the tasks and add it in members array withb the image and name
-
   return (
-    <Container className={"item"}>
+    <Container ref={drag} style={{ opacity: isDragging ? 0.5 : 1 }}>
       <Top>
         <Title>{work.title}</Title>
         {work.priority === "Low" &&
-          <StarsRounded sx={{ 'font-size': '18px' }} style={{ 'color': '#E67E22' }} />}
+          <StarsRounded sx={{ fontSize: '18px' }} style={{ 'color': '#E67E22' }} />}
         <IcoBtn onClick={handleMenuClick}>
           <MoreVert style={{ flex: "1", fontSize: '20px' }} />
         </IcoBtn>
@@ -223,32 +216,30 @@ const Card = ({ status, work }) => {
           open={openMenu}
           onClose={handleMenuClose}
         >
-          <MenuItem onClick={() => handleStatusUpdate("Working")}>Set to working</MenuItem>
-          <MenuItem onClick={() => handleStatusUpdate("Completed")}>Set to completed</MenuItem>
+          <MenuItem onClick={handleDelete} style={{ color: '#EF4444' }}>Delete</MenuItem>
         </Menu>
       </Top>
       <Desc>{work.desc}</Desc>
-      <Tags>
-        {tag.map((tag) => (
-          <Tag
-            tagColor={tagColors[Math.floor(Math.random() * tagColors.length)]}
-          >
-            {tag}
-          </Tag>
-        ))}
-      </Tags>
       <Progress>
         <Text>
-          {completed === task.length && task.length > 0 ? "Tasks Completed" : "Task In Progress"}
-          <Span>
-            {completed} / {task.length}
-          </Span>
+          {status === "Cancelled" ? "Task Cancelled" :
+            status === "Completed" ? "Task Completed" :
+              task?.length > 0 && completed === task?.length ? "Sub-tasks Completed" : "Task In Progress"}
+          {task?.length > 0 && (
+            <Span>
+              {completed} / {task?.length || 0}
+            </Span>
+          )}
         </Text>
         <LinearProgress
-          sx={{ borderRadius: "10px", height: 3 }}
+          sx={{
+            borderRadius: "10px",
+            height: 3,
+            backgroundColor: (theme) => theme.soft + "40",
+            '& .MuiLinearProgress-bar': { backgroundColor: stageColor || "#3B82F6" }
+          }}
           variant="determinate"
-          value={(completed / task.length) * 100}
-          color={color}
+          value={task?.length > 0 ? (completed / task.length) * 100 : 0}
         />
       </Progress>
       <Bottom>
@@ -257,8 +248,9 @@ const Card = ({ status, work }) => {
           {format(work.updatedAt)}
         </Time>
         <AvatarGroup>
-          {members.slice(0, 2).map((member) => (
+          {members?.slice(0, 2).map((member) => (
             <Avatar
+              key={member._id}
               sx={{
                 marginRight: "-13px",
                 width: "26px",
@@ -270,7 +262,7 @@ const Card = ({ status, work }) => {
               {member.name.charAt(0)}
             </Avatar>
           ))}
-          {members.length > 2 && (
+          {members?.length > 2 && (
             <Avatar
               sx={{
                 marginRight: "-13px",

@@ -49,8 +49,10 @@ export const getPosts = async (token) => await API.get("/community", { headers: 
 export const createPost = async (data, token) => await API.post("/community", data, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
 export const likePost = async (id, token) => await API.put(`/community/like/${id}`, {}, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
 export const deletePost = async (id, token) => await API.delete(`/community/${id}`, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
-export const searchUsers = async (search, token) => await API.get(`users/search/${search}`, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+export const searchUsers = async (search, token) => await API.get(`users/search/${encodeURIComponent(search)}`, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
 export const notifications = async (token) => await API.get('/users/notifications', { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+export const addComment = async (data, token) => await API.post("/community/comments", data, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+export const getComments = async (postId, token) => await API.get(`/community/comments/${postId}`, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
 export const getProjects = async (token) => await API.get(`/users/projects`, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
 export const userWorks = async (token) => await API.get('/users/works', { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
 export const userTasks = async (token) => await API.get('/users/tasks', { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
@@ -67,9 +69,20 @@ export const deleteProject = async (id, token) => await API.delete(`/project/${i
 export const updateMembers = async (id, members, token) => await API.patch(`/project/member/${id}`, members, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
 export const removeMembers = async (id, members, token) => await API.patch(`/project/member/remove/${id}`, members, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
 export const updateTaskStatus = async (taskId, status, token) => await API.patch(`/project/task/${taskId}`, { status }, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+export const updateTaskDetails = async (taskId, taskData, token) => await API.patch(`/project/task/update/${taskId}`, taskData, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
 export const updateWorkStatus = async (workId, status, token) => await API.patch(`/project/work/${workId}`, { status }, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
-
-
+export const deleteTask = async (taskId, token) => await API.delete(`/project/task/${taskId}`, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+export const addTask = async (workId, taskData, token) => await API.post(`/project/work/${workId}/task`, taskData, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+export const deleteWork = async (workId, token) => await API.delete(`/project/work/${workId}`, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+export const startTimer = async (taskId, token) => await API.post(`/project/task/${taskId}/start-timer`, {}, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+export const stopTimer = async (taskId, token) => await API.post(`/project/task/${taskId}/stop-timer`, {}, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+export const updateProjectStages = async (id, stages, token) => await API.patch(`/project/${id}/stages`, { stages }, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+export const getWorkloadStats = async (token) => await API.get('/project/get/workload', { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+export const createSnapshot = async (id, message, token) => await API.post(`/project/${id}/snapshot`, { message }, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+export const getSnapshots = async (id, token) => await API.get(`/project/${id}/snapshots`, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+export const getGitHubActivity = async (id, token) => await API.get(`/project/${id}/github`, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+export const warpDriveProject = async (data, token) => await API.post('/project/warp-drive', data, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+export const createZoomMeeting = async (projectId, token) => await API.post(`/zoom/create`, { projectId }, { headers: { "Authorization": `Bearer ${token}` }, withCredentials: true });
 
 //teams api
 export const createTeam = async (team, token) => await API.post('team/', team, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
@@ -81,3 +94,13 @@ export const updateTeam = async (id, team, token) => await API.patch(`/team/${id
 export const deleteTeam = async (id, token) => await API.delete(`/team/${id}`, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
 export const updateTeamMembers = async (id, members, token) => await API.patch(`/team/member/${id}`, members, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
 export const removeTeamMembers = async (id, members, token) => await API.patch(`/team/member/remove/${id}`, members, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+export const addPoll = async (id, poll, token) => await API.post(`/team/${id}/polls`, poll, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+export const votePoll = async (id, pollId, optionIndex, token) => await API.patch(`/team/${id}/polls/vote`, { pollId, optionIndex }, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+
+//chat api
+export const createChat = async (data, token) => await API.post('/chat/', data, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+export const userChats = async (id, token) => await API.get(`/chat/${id}`, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+export const findChat = async (firstId, secondId, token) => await API.get(`/chat/find/${firstId}/${secondId}`, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+export const getProjectChat = async (projectId, token) => await API.get(`/chat/project/${projectId}`, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+export const addMessage = async (data, token) => await API.post('/message/', data, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });
+export const getMessages = async (chatId, token) => await API.get(`/message/${chatId}`, { headers: { "Authorization": `Bearer ${token}` } }, { withCredentials: true });

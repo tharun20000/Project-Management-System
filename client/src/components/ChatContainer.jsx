@@ -1,6 +1,8 @@
 import { ArrowBack, AttachFile, DoneAll, Send, Telegram } from '@mui/icons-material'
 import { Avatar, IconButton } from '@mui/material'
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useState } from 'react'
+import { getMessages, addMessage } from '../api'
+import { format } from "timeago.js";
 import styled from 'styled-components'
 
 const Container = styled.div`
@@ -154,9 +156,15 @@ const Message = styled.input`
 `;
 
 
-const ChatContainer = ({showChat,setShowChat}) => {
+const SenderName = styled.span`
+    font-size: 12px;
+    color: ${({ theme }) => theme.textSoft};
+    margin: 0 0 2px 18px;
+    font-weight: 500;
+`
 
-    //get the window size and hide the chat container for mobile and dislay it for desktop
+const ChatContainer = ({ showChat, setShowChat, currentChat, currentUser, socket }) => {
+
     const [width, setWidth] = React.useState(window.innerWidth)
     const breakpoint = 768
 
@@ -166,48 +174,125 @@ const ChatContainer = ({showChat,setShowChat}) => {
         return () => window.removeEventListener("resize", handleWindowResize)
     }, [])
 
+    const [messages, setMessages] = useState([]);
+    const [newMessage, setNewMessage] = useState("");
     const messagesEndRef = useRef(null)
+
+    useEffect(() => {
+        const fetchMessages = async () => {
+            if (currentChat) {
+                try {
+                    const token = localStorage.getItem("token");
+                    const res = await getMessages(currentChat._id, token);
+                    setMessages(res.data);
+                    if (socket) {
+                        socket.emit("join-chat", currentChat._id);
+                    }
+                } catch (err) {
+                    console.log(err);
+                }
+            }
+        };
+        if (currentChat) fetchMessages();
+    }, [currentChat, currentUser, socket]);
+
+    useEffect(() => {
+        if (socket) {
+            socket.on("msg-recieve", (msg) => {
+                if (currentChat && msg.chatId === currentChat._id) {
+                    setMessages((prev) => prev.some(m => m._id === msg._id) ? prev : [...prev, msg]);
+                }
+            });
+        }
+        return () => {
+            if (socket) {
+                socket.off("msg-recieve");
+            }
+        }
+    }, [currentChat, socket]);
+
+    const handleSend = async (e) => {
+        e.preventDefault();
+        if (!newMessage) return;
+        const message = {
+            text: newMessage,
+            chatId: currentChat._id,
+        };
+        try {
+            const token = localStorage.getItem("token");
+            const res = await addMessage(message, token);
+            setMessages((prev) => prev.some(m => m._id === res.data._id) ? prev : [...prev, res.data]);
+            setNewMessage("");
+            if (socket) {
+                socket.emit("send-msg", res.data);
+            }
+        } catch (err) {
+            console.log(err);
+        }
+    };
+
     const scrollToBottom = () => {
-        messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
     }
-    useEffect(scrollToBottom);
+    useEffect(scrollToBottom, [messages]);
+
+    const otherMember = currentChat?.members?.find((member) => member._id !== currentUser._id);
+
+    const getSender = (senderId) => {
+        return currentChat?.members?.find((member) => member._id === senderId);
+    }
 
     return (
         <Container>
-            <TopBar>
-                {width < breakpoint &&
-                <IconButton style={{ color: 'inherit' }} onClick={()=>setShowChat(false)}>
-                    <ArrowBack sx={{ width: "24px", height: '24px' }} />
-                </IconButton>}
-                <Avatar sx={{ width: "46px", height: '46px' }} />
-                <Profile>
-                    <Name>John Doe</Name>
-                    <Status>Online</Status>
-                </Profile>
-            </TopBar>
-            <Chat>
-                <RecievedMessage>hola fghtdfhhhhhhhhhhhhhhhh trw twr twrtrw44t rwerewty rewyetryetyetyetryery ertyetyertyertyetry e5ty5et444444444444y   5y54ey5yy  y53y5e4ye45</RecievedMessage>
-                <Time message="recieved"><b>Today at 12:40</b> <DoneAll sx={{ width: '18px', height: '18px' }} /></Time>
-                <SentMessage>hola fghtdfhhhhhhhhhhhhhhhh trw twr twrtrw44t rwerewty rewyetryetyetyetryery ertyetyertyertyetry e5ty5et444444444444y  5y54ey5yy  y53y5e4ye45</SentMessage>
-                <Time message="sent"><b>Today at 12:40</b><DoneAll /></Time>
-                <RecievedMessage>hola fghtdfhhhhhhhhhhhhhhhh trw twr twrtrw44t rwerewty rewyetryetyetyetryery ertyetyertyertyetry e5ty5et444444444444y   5y54ey5yy  y53y5e4ye45</RecievedMessage>
-                <Time message="recieved"><b>Today at 12:40</b> <DoneAll /></Time>
-                <SentMessage>hola fghtdfhhhhhhhhhhhhhhhh trw twr twrtrw44t rwerewty rewyetryetyetyetryery ertyetyertyertyetry e5ty5et444444444444y  5y54ey5yy  y53y5e4ye45</SentMessage>
-                <Time message="sent"><b>Today at 12:40</b><DoneAll /></Time>
-
-                <div ref={messagesEndRef} />
-            </Chat>
-            <SendMessage>
-                <IconButton style={{ color: 'inherit', marginBottom: '6px' }}>
-                    <AttachFile sx={{ height: '28px', width: '28px' }} />
-                </IconButton>
-                <MessageBox>
-                    <Message placeholder="Type a message" />
-                </MessageBox>
-                <IconButton style={{ color: 'inherit', marginBottom: '6px' }}>
-                    <Telegram sx={{ height: '30px', width: '30px' }} />
-                </IconButton>
-            </SendMessage>
+            {currentChat ?
+                <>
+                    <TopBar>
+                        {width < breakpoint &&
+                            <IconButton style={{ color: 'inherit' }} onClick={() => setShowChat(false)}>
+                                <ArrowBack sx={{ width: "24px", height: '24px' }} />
+                            </IconButton>}
+                        <Avatar sx={{ width: "46px", height: '46px' }} src={otherMember?.img} />
+                        <Profile>
+                            <Name>{otherMember?.name}</Name>
+                            <Status>Online</Status>
+                        </Profile>
+                    </TopBar>
+                    <Chat>
+                        {messages.map((m) => (
+                            <div key={m._id}>
+                                {m.senderId === currentUser._id ?
+                                    <>
+                                        <SentMessage key={m._id}>{m.text}</SentMessage>
+                                        <Time message="sent"><b>{format(m.createdAt)}</b><DoneAll /></Time>
+                                    </>
+                                    :
+                                    <div style={{ display: 'flex', flexDirection: 'column', marginTop: '16px' }}>
+                                        <SenderName>{getSender(m.senderId)?.name}</SenderName>
+                                        <RecievedMessage key={m._id} style={{ margin: '0 16px 0 16px' }}>{m.text}</RecievedMessage>
+                                        <Time message="recieved"><b>{format(m.createdAt)}</b></Time>
+                                    </div>
+                                }
+                            </div>
+                        ))}
+                        <div ref={messagesEndRef} />
+                    </Chat>
+                    <SendMessage>
+                        <IconButton style={{ color: 'inherit', marginBottom: '6px' }}>
+                            <AttachFile sx={{ height: '28px', width: '28px' }} />
+                        </IconButton>
+                        <MessageBox>
+                            <Message placeholder="Type a message" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} />
+                        </MessageBox>
+                        <IconButton style={{ color: 'inherit', marginBottom: '6px' }} onClick={handleSend}>
+                            <Telegram sx={{ height: '30px', width: '30px' }} />
+                        </IconButton>
+                    </SendMessage>
+                </>
+                :
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: 'grey' }}>
+                    Select a chat to start messaging
+                </div>
+            }
         </Container>
     )
 }

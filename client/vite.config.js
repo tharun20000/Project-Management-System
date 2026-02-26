@@ -13,6 +13,10 @@ export default defineConfig({
                 changeOrigin: true,
             },
         },
+        headers: {
+            "Cross-Origin-Opener-Policy": "unsafe-none",
+            "Cross-Origin-Embedder-Policy": "unsafe-none",
+        },
     },
     build: {
         outDir: 'build'

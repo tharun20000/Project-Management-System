@@ -133,7 +133,7 @@ const DeletePopup = ({ openDelete, setOpenDelete }) => {
       .catch((err) => {
         dispatch(openSnackbar
           ({
-            message: err.message,
+            message: err.response?.data?.message || err.message,
             type: "error",
           }));
       })
@@ -154,7 +154,7 @@ const DeletePopup = ({ openDelete, setOpenDelete }) => {
       ).catch((err) => {
         dispatch(openSnackbar
           ({
-            message: err.message,
+            message: err.response?.data?.message || err.message,
             type: "error",
           }));
       }
@@ -176,7 +176,7 @@ const DeletePopup = ({ openDelete, setOpenDelete }) => {
       })
       .catch((err) => {
         dispatch(openSnackbar({
-          message: err.message,
+          message: err.response?.data?.message || err.message,
           type: "error",
         }));
         setLoading(false);
